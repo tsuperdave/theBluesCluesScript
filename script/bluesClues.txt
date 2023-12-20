@@ -18,6 +18,7 @@ groupBb = "BBands - 2 Std. Deviation"
 groupVwap = "Auto Anchored D/W/M VWAP"
 ttBb = "Shows BBands on LTF"
 groupDwmLevels = "D/W/M Levels"
+groupCog = "+/- COG Alerts"
 
 displayLtf = timeframe.isintraday and timeframe.multiplier <= 60
 displayHtf = timeframe.isdwm
@@ -31,7 +32,7 @@ emaColor3 = color.new(color.purple, 50)
 dVwapColor = color.new(color.gray, 60)
 wVwapColor = color.new(color.yellow, 60)
 mVwapColor = color.new(color.orange, 60)
-dLevelColor = color.new(color.blue, 40)
+dLevelColor = color.new(#4dd0e1, 40)
 wLevelColor = color.new(color.yellow, 40)
 mLevelColor = color.new(color.orange, 40)
 
@@ -76,7 +77,7 @@ plotshape(longBbandEntryHtf and displayHtf, style=shape.triangleup, location=loc
 // plotshape(shortBbandEntryLtf and showBbLtf, style=shape.triangledown, location=location.abovebar, color=color.new(color.red, 50), size=size.small, title='Mean Reversion LTF - Short')
 // plotshape(longBbandEntryLtf and showBbLtf, style=shape.triangleup, location=location.belowbar, color=color.new(color.green, 50), size=size.small, title='Mean Reversion LTF - Long')
 
-// VWAP
+// VWAP ---------------------------------
 dvColor = input(defval = dVwapColor, title="D VWAP Color", inline = vwap, group = groupVwap)
 wvColor = input(defval = wVwapColor, title="W VWAP Color", inline = vwap, group = groupVwap)
 mvColor = input(defval = mVwapColor, title="M VWAP Color", inline = vwap, group = groupVwap)
@@ -88,10 +89,10 @@ dwmBarTime = timeframe.isdwm ? time : time("D")
 // If it's a short day, then there could be no daily bar. Take a previous one.
 if na(dwmBarTime)
     dwmBarTime := nz(dwmBarTime[1])
-var periodStart = time - time // zero
+var periodStartD = time - time // zero
+var periodStartW = time - time // zero
+var periodStartM = time - time // zero
 
-// in pine week starts on Sunday and it's value 1. Value of Monday is 2
-// we need a week to start on Monday and its value should be 0
 makeMondayZero(dayOfWeek) => (dayOfWeek + 5) % 7
 
 isMidnight(t) =>
@@ -123,46 +124,79 @@ numDaysBetween(time1, time2) =>
     diff = math.abs(timestamp("GMT", y1, m1, d1, 0, 0) - timestamp("GMT", y2, m2, d2, 0, 0))
     diff / MILLIS_IN_DAY
 
-// a symbol with overnight session starts at previos day
-// to get the trading day we should get the next day after the session's start
 tradingDay = isOvernight() ? tradingDayStart(dwmBarTime + MILLIS_IN_DAY) : tradingDayStart(dwmBarTime)
 
-isNewPeriod() =>
+isNewDPeriod() =>
     isNew = false
     if tradingDay != nz(tradingDay[1])
-        if anchor == "Session"
-            isNew := na(tradingDay[1]) or tradingDay > tradingDay[1]
-            
-        if anchor == "Week"
-            DAYS_IN_WEEK = 7
-            isNew := makeMondayZero(dayofweek(periodStart)) + numDaysBetween(periodStart, tradingDay) >= DAYS_IN_WEEK
-            
-        if anchor == "Month"
-            isNew := month(periodStart) != month(tradingDay) or year(periodStart) != year(tradingDay)
-            
-        if anchor == "Year"
-            isNew := year(periodStart) != year(tradingDay)
+        isNew := na(tradingDay[1]) or tradingDay > tradingDay[1]
+    
     isNew
 
+isNewWPeriod() =>
+    isNew = false
+    if tradingDay != nz(tradingDay[1])
+        DAYS_IN_WEEK = 7
+        isNew := makeMondayZero(dayofweek(periodStartW)) + numDaysBetween(periodStartW, tradingDay) >= DAYS_IN_WEEK
+            
+    isNew
 
-sumSrc = float(na)
-sumVol = float(na)
+isNewMPeriod() =>
+    isNew = false
+    if tradingDay != nz(tradingDay[1])
+        isNew := month(periodStartM) != month(tradingDay) or year(periodStartM) != year(tradingDay)
+            
+    isNew
 
-sumSrc := nz(sumSrc[1], 0)
-sumVol := nz(sumVol[1], 0)
+sumSrcD = float(na)
+sumVolD = float(na)
+sumSrcD := nz(sumSrcD[1], 0)
+sumVolD := nz(sumVolD[1], 0)
 
-if isNewPeriod()
-    periodStart := tradingDay
-    sumSrc := 0.0
-    sumVol := 0.0
+sumSrcW = float(na)
+sumVolW = float(na)
+sumSrcW := nz(sumSrcW[1], 0)
+sumVolW := nz(sumVolW[1], 0)
 
+sumSrcM = float(na)
+sumVolM = float(na)
+sumSrcM := nz(sumSrcM[1], 0)
+sumVolM := nz(sumVolM[1], 0)
+
+if isNewDPeriod()
+    periodStartD := tradingDay
+    sumSrcD := 0.0
+    sumVolD := 0.0
+
+if isNewWPeriod()
+    periodStartW := tradingDay
+    sumSrcW := 0.0
+    sumVolW := 0.0
+
+if isNewMPeriod()
+    periodStartM := tradingDay
+    sumSrcM := 0.0
+    sumVolM := 0.0
 
 if not na(hlc3) and not na(volume)
-    sumSrc := sumSrc + src * volume
-    sumVol := sumVol + volume
+    sumSrcD := sumSrcD + src * volume
+    sumVolD := sumVolD + volume
 
-vwapValue = sumSrc / sumVol
-plot(displayLtf ? vwapValue : na, title="VWAP", style = plot.style_circles, color=#ddecff, display = displaySet)
+if not na(hlc3) and not na(volume)
+    sumSrcW := sumSrcW + src * volume
+    sumVolW := sumVolW + volume
+
+if not na(hlc3) and not na(volume)
+    sumSrcM := sumSrcM + src * volume
+    sumVolM := sumVolM + volume
+
+dVwapValue = sumSrcD/ sumVolD
+wVwapValue = sumSrcW/ sumVolW
+mVwapValue = sumSrcM/ sumVolM
+plot(displayLtf ? dVwapValue : na, title="D VWAP", style = plot.style_circles, color=#4dd0e18e, display = displaySet)
+plot(wVwapValue, title="W VWAP", style = plot.style_circles, color=#fafc809c, display = displaySet)
+plot(mVwapValue, title="M VWAP", style = plot.style_circles, color=#ffc27d88, display = displaySet)
+
 
 // DWM PRICE LEVELS --------------------------
 d_Line_Color    = input.color(defval = dLevelColor, title = "Daily Level", inline = dwmLevels, group = groupDwmLevels)
@@ -221,8 +255,39 @@ label.delete(label_monthly_Low[1])
 label_monthly_Close = label.new(bar_index, showDwmClose ? _mC : na, text = mBlank + "Prev M Close : " + str.tostring(_mC, format.mintick) + "\n", color = color.new(color.black, 100), style = label.style_label_left, textcolor = m_Line_Color, size = size.small, textalign = text.align_center)
 label.delete(label_monthly_Close[1])
 
-// ALERT SETTINGS ------------------------------
+// ALERTS ------------------------------
+// check any condition you needed to fire
+cogList = input.text_area(defval = "SPY", title="COG Screener", display = displaySet, group = groupCog, tooltip = "Only enter valid ticker/symbol, comma separated, up to 40")
+isNegcOG = close[2] < close[1]
+isPosCog = not isNegcOG
+negCogStr = "-"
+posCogStr = "+"
+string[] cogWatchList = str.split(cogList, ",")
+
+checkForAlert()=>
+    alertMsg = ""
+
+    // check for odd
+    if close[2] > close[1]
+        alertMsg += str.format("{0}COG made on 30m for {}!\n", posCogStr, syminfo.ticker)        
+
+    // any other checks needed
+
+    alertMsg
+
+// fireAlert(freq = alert.freq_once_per_bar) =>
+    // for symbolInList in cogWatchList
+
+    //     msg = request.security(symbolInList, "1m", checkForAlert())
+    //     if str.length(msg) > 0
+    //         alert(msg, freq)
+
+// fireAlert(cogWatchList)
+
 alertcondition(shortBbandEntryHtf, title='Short Entry', message='Mean Reversion Alert HTF - Short')
 alertcondition(longBbandEntryHtf, title='Long Entry', message='Mean Reversion Alert HTF - Long')
 // alertcondition(shortBbandEntryLtf and showBbLtf, title='Short Entry', message='Mean Reversion Alert LTF - Short')
 // alertcondition(longBbandEntryLtf and showBbLtf, title='Long Entry', message='Mean Reversion Alert LTF - Long')
+
+//for each in list,
+    // fire alert with ticker
