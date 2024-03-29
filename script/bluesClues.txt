@@ -32,6 +32,7 @@ emaColor3 = color.new(color.purple, 50)
 dVwapColor = color.new(color.gray, 60)
 wVwapColor = color.new(color.yellow, 60)
 mVwapColor = color.new(color.orange, 60)
+yVwapColor = color.new(color.purple, 60)
 dLevelColor = color.new(#4dd0e1, 40)
 wLevelColor = color.new(color.yellow, 40)
 mLevelColor = color.new(color.orange, 40)
@@ -81,6 +82,7 @@ longBbandEntryHtf = close < lowerHtf
 dvColor = input(defval = dVwapColor, title="D VWAP Color", inline = vwap, group = groupVwap)
 wvColor = input(defval = wVwapColor, title="W VWAP Color", inline = vwap, group = groupVwap)
 mvColor = input(defval = mVwapColor, title="M VWAP Color", inline = vwap, group = groupVwap)
+yvColor = input(defval = yVwapColor, title="Y VWAP Color", inline = vwap, group = groupVwap)
 
 MILLIS_IN_DAY = 86400000
 
@@ -91,6 +93,7 @@ if na(dwmBarTime)
 var periodStartD = time - time // zero
 var periodStartW = time - time // zero
 var periodStartM = time - time // zero
+var periodStartY = time - time // zero
 
 makeMondayZero(dayOfWeek) => (dayOfWeek + 5) % 7
 
@@ -145,7 +148,14 @@ isNewMPeriod() =>
     if tradingDay != nz(tradingDay[1])
         isNew := month(periodStartM) != month(tradingDay) or year(periodStartM) != year(tradingDay)
             
-//     isNew
+    isNew
+
+isNewYPeriod() =>
+    isNew = false
+    if tradingDay != nz(tradingDay[1])
+        isNew := year(periodStartY) != year(tradingDay) or year(periodStartY) != year(tradingDay)
+            
+    isNew
 
 sumSrcD = float(na)
 sumVolD = float(na)
@@ -162,6 +172,11 @@ sumVolM = float(na)
 sumSrcM := nz(sumSrcM[1], 0)
 sumVolM := nz(sumVolM[1], 0)
 
+sumSrcY = float(na)
+sumVolY = float(na)
+sumSrcY := nz(sumSrcY[1], 0)
+sumVolY := nz(sumVolY[1], 0)
+
 if isNewDPeriod()
     periodStartD := tradingDay
     sumSrcD := 0.0
@@ -177,6 +192,11 @@ if isNewMPeriod()
     sumSrcM := 0.0
     sumVolM := 0.0
 
+if isNewYPeriod()
+    periodStartY := tradingDay
+    sumSrcY := 0.0
+    sumVolY := 0.0    
+
 if not na(ohlc4) and not na(volume)
     sumSrcD := sumSrcD + ohlc4 * volume
     sumVolD := sumVolD + volume
@@ -189,13 +209,18 @@ if not na(ohlc4) and not na(volume)
     sumSrcM := sumSrcM + ohlc4 * volume
     sumVolM := sumVolM + volume
 
+if not na(ohlc4) and not na(volume)
+    sumSrcY := sumSrcY + ohlc4 * volume
+    sumVolY := sumVolY + volume    
+
 dVwapValue = sumSrcD/ sumVolD
 wVwapValue = sumSrcW/ sumVolW
 mVwapValue = sumSrcM/ sumVolM
+yVwapValue = sumSrcY/ sumVolY
 plot(displayLtf ? dVwapValue : na, title="D VWAP", style = plot.style_circles, color=#4dd0e18e, display = displaySet)
 plot(wVwapValue, title="W VWAP", style = plot.style_circles, color=#fafc809c, display = displaySet)
 plot(mVwapValue, title="M VWAP", style = plot.style_circles, color=#ffc27d88, display = displaySet)
-
+plot(yVwapValue, title="Y VWAP", style = plot.style_circles, color=#910fac88, display = displaySet)
 
 // DWM PRICE LEVELS --------------------------
 d_Line_Color    = input.color(defval = dLevelColor, title = "Daily Level", inline = dwmLevels, group = groupDwmLevels)
