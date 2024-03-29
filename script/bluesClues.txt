@@ -61,7 +61,7 @@ lowerHtfColor = input(defval = bbColor, title="Lower HTF Band", inline = bb1, gr
 showBbLtf = input.bool(defval = false, title = "Show BB on LTF", inline = bb2, group = groupBb)
 upperLtfColor = input(defval = bbColor, title="Upper LTF Band", inline = bb3, group = groupBb)
 lowerLtfColor = input(defval = bbColor, title="Lower LTF Band", inline = bb3, group = groupBb)
-p1Htf = plot(displayHtf ? upperLtf : na, "Upper", color = upperHtfColor, display = displaySet)
+p1Htf = plot(displayHtf ? upperHtf : na, "Upper", color = upperHtfColor, display = displaySet)
 p2Htf = plot(displayHtf ? lowerHtf : na, "Lower", color = lowerHtfColor, display = displaySet)
 p1Ltf = plot(displayVwapLtf and showBbLtf ? upperLtf : na, color = upperLtfColor, display = displaySet)
 p2Ltf = plot(displayVwapLtf and showBbLtf ? lowerLtf : na, color = lowerLtfColor, display = displaySet)
@@ -72,8 +72,8 @@ longBbandEntryHtf = close < lowerHtf
 // shortBbandEntryLtf = close > upperLtf
 // longBbandEntryLtf = close < lowerLtf
 
-plotshape(shortBbandEntryHtf and displayHtf, style=shape.triangledown, location=location.abovebar, color=color.new(color.red, 50), size=size.small, title='Mean Reversion HTF - Short',  display = displaySet)
-plotshape(longBbandEntryHtf and displayHtf, style=shape.triangleup, location=location.belowbar, color=color.new(color.green, 50), size=size.small, title='Mean Reversion HTF - Long',  display = displaySet)
+// plotshape(shortBbandEntryHtf and displayHtf, style=shape.triangledown, location=location.abovebar, color=color.new(color.red, 50), size=size.small, title='Mean Reversion HTF - Short',  display = displaySet)
+// plotshape(longBbandEntryHtf and displayHtf, style=shape.triangleup, location=location.belowbar, color=color.new(color.green, 50), size=size.small, title='Mean Reversion HTF - Long',  display = displaySet)
 // plotshape(shortBbandEntryLtf and showBbLtf, style=shape.triangledown, location=location.abovebar, color=color.new(color.red, 50), size=size.small, title='Mean Reversion LTF - Short')
 // plotshape(longBbandEntryLtf and showBbLtf, style=shape.triangleup, location=location.belowbar, color=color.new(color.green, 50), size=size.small, title='Mean Reversion LTF - Long')
 
@@ -81,7 +81,6 @@ plotshape(longBbandEntryHtf and displayHtf, style=shape.triangleup, location=loc
 dvColor = input(defval = dVwapColor, title="D VWAP Color", inline = vwap, group = groupVwap)
 wvColor = input(defval = wVwapColor, title="W VWAP Color", inline = vwap, group = groupVwap)
 mvColor = input(defval = mVwapColor, title="M VWAP Color", inline = vwap, group = groupVwap)
-anchor = input.string(defval = "Session", title="Anchor Period", options=["Session", "Week", "Month", "Year"])
 
 MILLIS_IN_DAY = 86400000
 
@@ -146,7 +145,7 @@ isNewMPeriod() =>
     if tradingDay != nz(tradingDay[1])
         isNew := month(periodStartM) != month(tradingDay) or year(periodStartM) != year(tradingDay)
             
-    isNew
+//     isNew
 
 sumSrcD = float(na)
 sumVolD = float(na)
@@ -178,16 +177,16 @@ if isNewMPeriod()
     sumSrcM := 0.0
     sumVolM := 0.0
 
-if not na(hlc3) and not na(volume)
-    sumSrcD := sumSrcD + src * volume
+if not na(ohlc4) and not na(volume)
+    sumSrcD := sumSrcD + ohlc4 * volume
     sumVolD := sumVolD + volume
 
-if not na(hlc3) and not na(volume)
-    sumSrcW := sumSrcW + src * volume
+if not na(ohlc4) and not na(volume)
+    sumSrcW := sumSrcW + ohlc4 * volume
     sumVolW := sumVolW + volume
 
-if not na(hlc3) and not na(volume)
-    sumSrcM := sumSrcM + src * volume
+if not na(ohlc4) and not na(volume)
+    sumSrcM := sumSrcM + ohlc4 * volume
     sumVolM := sumVolM + volume
 
 dVwapValue = sumSrcD/ sumVolD
@@ -202,8 +201,8 @@ plot(mVwapValue, title="M VWAP", style = plot.style_circles, color=#ffc27d88, di
 d_Line_Color    = input.color(defval = dLevelColor, title = "Daily Level", inline = dwmLevels, group = groupDwmLevels)
 w_Line_Color    = input.color(defval = wLevelColor, title = "Weekly Level",  inline = dwmLevels, group = groupDwmLevels)
 m_Line_Color    = input.color(defval = mLevelColor, title = "Monthly Level", inline = dwmLevels, group = groupDwmLevels)
-showDwmClose = input.bool(defval = false, title = "Show Close?", inline = dwmLevels)
-dwmLineWidth      = input.int(defval = 2, title = "Levels Line Width", minval = 1, maxval = 4, step = 1, group = groupDwmLevels)
+showDwmClose    = input.bool(defval = false, title = "Show Close?", inline = dwmLevels)
+dwmLineWidth    = input.int(defval = 2, title = "Levels Line Width", minval = 1, maxval = 4, step = 1, group = groupDwmLevels)
 
 dBlank   = "\n‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏"
 wBlank   = "\n‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏"
@@ -256,38 +255,11 @@ label_monthly_Close = label.new(bar_index, showDwmClose ? _mC : na, text = mBlan
 label.delete(label_monthly_Close[1])
 
 // ALERTS ------------------------------
-// check any condition you needed to fire
-cogList = input.text_area(defval = "SPY", title="COG Screener", display = displaySet, group = groupCog, tooltip = "Only enter valid ticker/symbol, comma separated, up to 40")
-isNegcOG = close[2] < close[1]
-isPosCog = not isNegcOG
-negCogStr = "-"
-posCogStr = "+"
-string[] cogWatchList = str.split(cogList, ",")
-
-checkForAlert()=>
-    alertMsg = ""
-
-    // check for odd
-    if close[2] > close[1]
-        alertMsg += str.format("{0}COG made on 30m for {}!\n", posCogStr, syminfo.ticker)        
-
-    // any other checks needed
-
-    alertMsg
-
-// fireAlert(freq = alert.freq_once_per_bar) =>
-    // for symbolInList in cogWatchList
-
-    //     msg = request.security(symbolInList, "1m", checkForAlert())
-    //     if str.length(msg) > 0
-    //         alert(msg, freq)
-
-// fireAlert(cogWatchList)
+// check any condition you needed to fire TODO
+isNegcOG = (close[1] < low[2]) and (close[1] < dVwapValue) and timeframe.period == "30m"
+isPosCog = (close[1] > high[2]) and (close[1] > dVwapValue) and timeframe.period == "30m"
 
 alertcondition(shortBbandEntryHtf, title='Short Entry', message='Mean Reversion Alert HTF - Short')
 alertcondition(longBbandEntryHtf, title='Long Entry', message='Mean Reversion Alert HTF - Long')
 // alertcondition(shortBbandEntryLtf and showBbLtf, title='Short Entry', message='Mean Reversion Alert LTF - Short')
 // alertcondition(longBbandEntryLtf and showBbLtf, title='Long Entry', message='Mean Reversion Alert LTF - Long')
-
-//for each in list,
-    // fire alert with ticker
