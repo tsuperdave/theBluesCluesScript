@@ -62,8 +62,8 @@ lowerHtfColor = input(defval = bbColor, title="Lower HTF Band", inline = bb1, gr
 showBbLtf = input.bool(defval = false, title = "Show BB on LTF", inline = bb2, group = groupBb)
 upperLtfColor = input(defval = bbColor, title="Upper LTF Band", inline = bb3, group = groupBb)
 lowerLtfColor = input(defval = bbColor, title="Lower LTF Band", inline = bb3, group = groupBb)
-p1Htf = plot(displayHtf ? upperHtf : na, "Upper", color = upperHtfColor, display = displaySet)
-p2Htf = plot(displayHtf ? lowerHtf : na, "Lower", color = lowerHtfColor, display = displaySet)
+p1Htf = plot(displayHtf ? upperHtf : na, "Upper BBand", color = upperHtfColor, display = displaySet)
+p2Htf = plot(displayHtf ? lowerHtf : na, "Lower BBand", color = lowerHtfColor, display = displaySet)
 p1Ltf = plot(displayVwapLtf and showBbLtf ? upperLtf : na, color = upperLtfColor, display = displaySet)
 p2Ltf = plot(displayVwapLtf and showBbLtf ? lowerLtf : na, color = lowerLtfColor, display = displaySet)
 
@@ -112,7 +112,7 @@ tradingDayStart(t) =>
     y = year(t)
     m = month(t)
     d = dayofmonth(t)
-    timestamp(y, m, d, 0, 0)
+    timestamp(y, m, d, 0, 0, 0)
 
 numDaysBetween(time1, time2) =>
     y1 = year(time1)
@@ -126,12 +126,12 @@ numDaysBetween(time1, time2) =>
     diff = math.abs(timestamp("GMT", y1, m1, d1, 0, 0) - timestamp("GMT", y2, m2, d2, 0, 0))
     diff / MILLIS_IN_DAY
 
-tradingDay = isOvernight() ? tradingDayStart(dwmBarTime + MILLIS_IN_DAY) : tradingDayStart(dwmBarTime)
+tradingDay = isOvernight() ? tradingDayStart(dwmBarTime) : tradingDayStart(dwmBarTime  + MILLIS_IN_DAY)
 
 isNewDPeriod() =>
     isNew = false
     if tradingDay != nz(tradingDay[1])
-        isNew := na(tradingDay[1]) or tradingDay > tradingDay[1]
+        isNew := na(tradingDay[1]) or tradingDay >= tradingDay[1]
     
     isNew
 
@@ -213,12 +213,12 @@ if not na(ohlc4) and not na(volume)
     sumSrcY := sumSrcY + ohlc4 * volume
     sumVolY := sumVolY + volume    
 
-dVwapValue = sumSrcD/ sumVolD
-wVwapValue = sumSrcW/ sumVolW
-mVwapValue = sumSrcM/ sumVolM
-yVwapValue = sumSrcY/ sumVolY
-plot(displayLtf ? dVwapValue : na, title="D VWAP", style = plot.style_circles, color=#4dd0e18e, display = displaySet)
-plot(wVwapValue, title="W VWAP", style = plot.style_circles, color=#fafc809c, display = displaySet)
+dVwapValue = sumSrcD / sumVolD
+wVwapValue = sumSrcW / sumVolW
+mVwapValue = sumSrcM / sumVolM
+yVwapValue = sumSrcY / sumVolY
+plot(dVwapValue, title="D VWAP", style = plot.style_circles, linewidth = 3, color=#4dd0e18e, display = displaySet)
+plot(wVwapValue, title="W VWAP", style = plot.style_circles, color=#fafc809c, linewidth = 2, display = displaySet)
 plot(mVwapValue, title="M VWAP", style = plot.style_circles, color=#ffc27d88, display = displaySet)
 plot(yVwapValue, title="Y VWAP", style = plot.style_circles, color=#910fac88, display = displaySet)
 
