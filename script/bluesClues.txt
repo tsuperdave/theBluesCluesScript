@@ -24,7 +24,6 @@ displayLtf = timeframe.isintraday and timeframe.multiplier <= 60
 displayHtf = timeframe.isdwm
 displayVwapD = timeframe.period == "D"
 displayVwapLtf = displayLtf
-// showPriceLevelsLessThanD = timeframe.period == "D" or timeframe.multiplier <= 240
 
 emaColor1 = color.new(color.aqua, 50)
 emaColor2 = color.new(color.blue, 50)
@@ -36,57 +35,74 @@ yVwapColor = color.new(color.purple, 60)
 dLevelColor = color.new(#4dd0e1, 40)
 wLevelColor = color.new(color.yellow, 40)
 mLevelColor = color.new(color.orange, 40)
+bbColor = color.new(color.gray, 50)
 
-// EMAs -----------------------------
-ltfColor = input(defval = emaColor1, title="20 EMA", inline = ema, group = groupEma)
-mtfColor = input(defval = emaColor2, title="50 EMA", inline = ema, group = groupEma)
-htfColor = input(defval = emaColor3, title="200 EMA", inline = ema, group = groupEma)
+// CONDITIONS ----------------------------
 src = close
 outLtf = ta.ema(src, 20)
 outMtf = ta.ema(src, 50)
 outHtf = ta.ema(src, 200)
-plot(outLtf, title="EMA-20", color = ltfColor, offset = 0, linewidth = 2, display = displaySet)
-plot(displayLtf ? outMtf : na, title="EMA-50", color = mtfColor, offset = 0, linewidth = 2, display = displaySet)
-plot(displayHtf ? outHtf : na, title="EMA-200", color = htfColor, offset = 0, linewidth = 2, display = displaySet)
-
-// B BANDS --------------------------
-bbColor = color.new(color.gray, 50)
-
 dev = 2.0 * ta.stdev(close, 20)
+
 upperHtf = outLtf + dev
 lowerHtf = outLtf - dev
 upperLtf = outLtf + dev
 lowerLtf = outLtf - dev
+
+shortBbandEntryHtf = close > upperHtf
+longBbandEntryHtf = close < lowerHtf
+
+MILLIS_IN_DAY = 86400000
+dwmBarTime = timeframe.isdwm ? time : time("D")
+
+dBlank   = "\n‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏"
+wBlank   = "\n‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏"
+mBlank   = "‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏"
+
+[_dH, _dL, _dC] = request.security(syminfo.tickerid, "D", [high[1], low[1], close[1]],  barmerge.gaps_off, barmerge.lookahead_on)
+[_wH, _wL, _wC] = request.security(syminfo.tickerid, "W", [high[1], low[1], close[1]],  barmerge.gaps_off, barmerge.lookahead_on)
+[_mH, _mL, _mC] = request.security(syminfo.tickerid, "M", [high[1], low[1], close[1]],  barmerge.gaps_off, barmerge.lookahead_on)
+
+isBearishTrend = outLtf < outMtf
+isBullishTrend = not isBearishTrend
+
+// INPUTS --------------------------------
+
+ltfColor = input(defval = emaColor1, title="20 EMA", inline = ema, group = groupEma)
+mtfColor = input(defval = emaColor2, title="50 EMA", inline = ema, group = groupEma)
+htfColor = input(defval = emaColor3, title="200 EMA", inline = ema, group = groupEma)
+
 upperHtfColor = input(defval = bbColor, title="Upper HTF Band", inline = bb1, group = groupBb)
 lowerHtfColor = input(defval = bbColor, title="Lower HTF Band", inline = bb1, group = groupBb)
 showBbLtf = input.bool(defval = false, title = "Show BB on LTF", inline = bb2, group = groupBb)
 upperLtfColor = input(defval = bbColor, title="Upper LTF Band", inline = bb3, group = groupBb)
 lowerLtfColor = input(defval = bbColor, title="Lower LTF Band", inline = bb3, group = groupBb)
-p1Htf = plot(displayHtf ? upperHtf : na, "Upper BBand", color = upperHtfColor, display = displaySet)
-p2Htf = plot(displayHtf ? lowerHtf : na, "Lower BBand", color = lowerHtfColor, display = displaySet)
-p1Ltf = plot(displayVwapLtf and showBbLtf ? upperLtf : na, color = upperLtfColor, display = displaySet)
-p2Ltf = plot(displayVwapLtf and showBbLtf ? lowerLtf : na, color = lowerLtfColor, display = displaySet)
 
-// // Long and Short Entry Labels
-shortBbandEntryHtf = close > upperHtf
-longBbandEntryHtf = close < lowerHtf
-// shortBbandEntryLtf = close > upperLtf
-// longBbandEntryLtf = close < lowerLtf
-
-// plotshape(shortBbandEntryHtf and displayHtf, style=shape.triangledown, location=location.abovebar, color=color.new(color.red, 50), size=size.small, title='Mean Reversion HTF - Short',  display = displaySet)
-// plotshape(longBbandEntryHtf and displayHtf, style=shape.triangleup, location=location.belowbar, color=color.new(color.green, 50), size=size.small, title='Mean Reversion HTF - Long',  display = displaySet)
-// plotshape(shortBbandEntryLtf and showBbLtf, style=shape.triangledown, location=location.abovebar, color=color.new(color.red, 50), size=size.small, title='Mean Reversion LTF - Short')
-// plotshape(longBbandEntryLtf and showBbLtf, style=shape.triangleup, location=location.belowbar, color=color.new(color.green, 50), size=size.small, title='Mean Reversion LTF - Long')
-
-// VWAP ---------------------------------
 dvColor = input(defval = dVwapColor, title="D VWAP Color", inline = vwap, group = groupVwap)
 wvColor = input(defval = wVwapColor, title="W VWAP Color", inline = vwap, group = groupVwap)
 mvColor = input(defval = mVwapColor, title="M VWAP Color", inline = vwap, group = groupVwap)
 yvColor = input(defval = yVwapColor, title="Y VWAP Color", inline = vwap, group = groupVwap)
 
-MILLIS_IN_DAY = 86400000
+d_Line_Color    = input.color(defval = dLevelColor, title = "Daily Level", inline = dwmLevels, group = groupDwmLevels)
+w_Line_Color    = input.color(defval = wLevelColor, title = "Weekly Level",  inline = dwmLevels, group = groupDwmLevels)
+m_Line_Color    = input.color(defval = mLevelColor, title = "Monthly Level", inline = dwmLevels, group = groupDwmLevels)
+extendLines     = input.bool(defval = false, title = "Extend Levels Across Screen?", inline = dwmLevels, group = groupDwmLevels)
+showDwmClose    = input.bool(defval = false, title = "Show Close?", inline = dwmLevels)
+dwmLineWidth    = input.int(defval = 2, title = "Levels Line Width", minval = 1, maxval = 4, step = 1, group = groupDwmLevels)
 
-dwmBarTime = timeframe.isdwm ? time : time("D")
+// EMAs -----------------------------
+plot(outLtf, title="EMA-20", color = ltfColor, offset = 0, linewidth = 2, display = displaySet)
+plot(displayLtf ? outMtf : na, title="EMA-50", color = mtfColor, offset = 0, linewidth = 2, display = displaySet)
+plot(displayHtf ? outHtf : na, title="EMA-200", color = htfColor, offset = 0, linewidth = 2, display = displaySet)
+
+// B BANDS --------------------------
+
+p1Htf = plot(displayHtf ? upperHtf : na, "Upper BBand", color = upperHtfColor, display = displaySet)
+p2Htf = plot(displayHtf ? lowerHtf : na, "Lower BBand", color = lowerHtfColor, display = displaySet)
+p1Ltf = plot(displayVwapLtf and showBbLtf ? upperLtf : na, color = upperLtfColor, display = displaySet)
+p2Ltf = plot(displayVwapLtf and showBbLtf ? lowerLtf : na, color = lowerLtfColor, display = displaySet)
+
+// VWAP ---------------------------------
 // If it's a short day, then there could be no daily bar. Take a previous one.
 if na(dwmBarTime)
     dwmBarTime := nz(dwmBarTime[1])
@@ -104,9 +120,6 @@ isSameDay(t1, t2) =>
     dayofmonth(t1) == dayofmonth(t2) and
   month(t1) == month(t2) and
   year(t1) == year(t2)
-
-isOvernight() =>
-    not (isMidnight(dwmBarTime) or request.security(syminfo.tickerid, "D", isSameDay(time, time_close), barmerge.gaps_on, barmerge.lookahead_on))
 
 tradingDayStart(t) =>
     y = year(t)
@@ -126,7 +139,7 @@ numDaysBetween(time1, time2) =>
     diff = math.abs(timestamp("GMT", y1, m1, d1, 0, 0) - timestamp("GMT", y2, m2, d2, 0, 0))
     diff / MILLIS_IN_DAY
 
-tradingDay = isOvernight() ? tradingDayStart(dwmBarTime) : tradingDayStart(dwmBarTime  + MILLIS_IN_DAY)
+tradingDay = tradingDayStart(dwmBarTime)
 
 isNewDPeriod() =>
     isNew = false
@@ -197,65 +210,51 @@ if isNewYPeriod()
     sumSrcY := 0.0
     sumVolY := 0.0    
 
-if not na(ohlc4) and not na(volume)
-    sumSrcD := sumSrcD + ohlc4 * volume
+if not na(hlc3) and not na(volume)
+    sumSrcD := sumSrcD + hlc3 * volume
     sumVolD := sumVolD + volume
 
-if not na(ohlc4) and not na(volume)
-    sumSrcW := sumSrcW + ohlc4 * volume
+if not na(hlc3) and not na(volume)
+    sumSrcW := sumSrcW + hlc3 * volume
     sumVolW := sumVolW + volume
 
-if not na(ohlc4) and not na(volume)
-    sumSrcM := sumSrcM + ohlc4 * volume
+if not na(hlc3) and not na(volume)
+    sumSrcM := sumSrcM + hlc3 * volume
     sumVolM := sumVolM + volume
 
-if not na(ohlc4) and not na(volume)
-    sumSrcY := sumSrcY + ohlc4 * volume
+if not na(hlc3) and not na(volume)
+    sumSrcY := sumSrcY + hlc3 * volume
     sumVolY := sumVolY + volume    
 
 dVwapValue = sumSrcD / sumVolD
 wVwapValue = sumSrcW / sumVolW
 mVwapValue = sumSrcM / sumVolM
 yVwapValue = sumSrcY / sumVolY
-plot(dVwapValue, title="D VWAP", style = plot.style_circles, linewidth = 3, color=#4dd0e18e, display = displaySet)
-plot(wVwapValue, title="W VWAP", style = plot.style_circles, color=#fafc809c, linewidth = 2, display = displaySet)
-plot(mVwapValue, title="M VWAP", style = plot.style_circles, color=#ffc27d88, display = displaySet)
-plot(yVwapValue, title="Y VWAP", style = plot.style_circles, color=#910fac88, display = displaySet)
+plot(dVwapValue, title="D VWAP", style = plot.style_circles, linewidth = 2, color=dvColor, display = displaySet)
+plot(wVwapValue, title="W VWAP", style = plot.style_circles, color=wvColor, linewidth = 2, display = displaySet)
+plot(mVwapValue, title="M VWAP", style = plot.style_circles, color=mVwapColor, display = displaySet)
+plot(yVwapValue, title="Y VWAP", style = plot.style_circles, color=yVwapColor, display = displaySet)
 
 // DWM PRICE LEVELS --------------------------
-d_Line_Color    = input.color(defval = dLevelColor, title = "Daily Level", inline = dwmLevels, group = groupDwmLevels)
-w_Line_Color    = input.color(defval = wLevelColor, title = "Weekly Level",  inline = dwmLevels, group = groupDwmLevels)
-m_Line_Color    = input.color(defval = mLevelColor, title = "Monthly Level", inline = dwmLevels, group = groupDwmLevels)
-showDwmClose    = input.bool(defval = false, title = "Show Close?", inline = dwmLevels)
-dwmLineWidth    = input.int(defval = 2, title = "Levels Line Width", minval = 1, maxval = 4, step = 1, group = groupDwmLevels)
-
-dBlank   = "\n‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏"
-wBlank   = "\n‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏"
-mBlank   = "‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏"
-
-[_dH, _dL, _dC] = request.security(syminfo.tickerid, "D", [high[1], low[1], close[1]],  barmerge.gaps_off, barmerge.lookahead_on)
-[_wH, _wL, _wC] = request.security(syminfo.tickerid, "W", [high[1], low[1], close[1]],  barmerge.gaps_off, barmerge.lookahead_on)
-[_mH, _mL, _mC] = request.security(syminfo.tickerid, "M", [high[1], low[1], close[1]],  barmerge.gaps_off, barmerge.lookahead_on)
-
-daily_High_Line     = line.new(time, _dH, time + 1, _dH, xloc = xloc.bar_time, extend = extend.right, color = dLevelColor, style = line.style_dotted, width = dwmLineWidth)
+daily_High_Line     = line.new(time, _dH, time + 1, _dH, xloc = xloc.bar_time, extend = extendLines ? extend.both : extend.right, color = dLevelColor, style = line.style_dotted, width = dwmLineWidth)
 line.delete(daily_High_Line[1])
-daily_Low_Line      = line.new(time, _dL, time + 1, _dL, xloc = xloc.bar_time, extend = extend.right, color = dLevelColor, style = line.style_dotted, width = dwmLineWidth)
+daily_Low_Line      = line.new(time, _dL, time + 1, _dL, xloc = xloc.bar_time, extend = extendLines ? extend.both : extend.right, color = dLevelColor, style = line.style_dotted, width = dwmLineWidth)
 line.delete(daily_Low_Line[1])
-daily_Close_Line    = line.new(time, showDwmClose ? _dC : na, time + 1, _dC, xloc = xloc.bar_time, extend = extend.right, color = dLevelColor, style = line.style_dotted, width = dwmLineWidth)
+daily_Close_Line    = line.new(time, showDwmClose ? _dC : na, time + 1, _dC, xloc = xloc.bar_time, extend = extendLines ? extend.both : extend.right, color = dLevelColor, style = line.style_dotted, width = dwmLineWidth)
 line.delete(daily_Close_Line[1])
 
-weekly_High_Line    = line.new(time, _wH, time + 1, _wH, xloc = xloc.bar_time, extend = extend.right, color = wLevelColor, style = line.style_dotted, width = dwmLineWidth)
+weekly_High_Line    = line.new(time, _wH, time + 1, _wH, xloc = xloc.bar_time, extend = extendLines ? extend.both : extend.right, color = wLevelColor, style = line.style_dotted, width = dwmLineWidth)
 line.delete(weekly_High_Line[1])
-wekkly_Low_Line     = line.new(time, _wL, time + 1, _wL, xloc = xloc.bar_time, extend = extend.right, color = wLevelColor, style = line.style_dotted, width = dwmLineWidth)
-line.delete(wekkly_Low_Line[1])
-weekly_Close_Line   = line.new(time, showDwmClose ? _wC : na,  time + 1, _wC,  xloc = xloc.bar_time, extend = extend.right, color = wLevelColor, style = line.style_dotted, width = dwmLineWidth)
+weekly_Low_Line     = line.new(time, _wL, time + 1, _wL, xloc = xloc.bar_time, extend = extendLines ? extend.both : extend.right, color = wLevelColor, style = line.style_dotted, width = dwmLineWidth)
+line.delete(weekly_Low_Line[1])
+weekly_Close_Line   = line.new(time, showDwmClose ? _wC : na,  time + 1, _wC,  xloc = xloc.bar_time, extend = extendLines ? extend.both : extend.right, color = wLevelColor, style = line.style_dotted, width = dwmLineWidth)
 line.delete(weekly_Close_Line[1])
 
-monthly_High_Line   = line.new(time, _mH,  time + 1, _mH,  xloc = xloc.bar_time, extend = extend.right, color = mLevelColor, style = line.style_dotted, width = dwmLineWidth)
+monthly_High_Line   = line.new(time, _mH,  time + 1, _mH,  xloc = xloc.bar_time, extend = extendLines ? extend.both : extend.right, color = mLevelColor, style = line.style_dotted, width = dwmLineWidth)
 line.delete(monthly_High_Line[1])
-monthly_Low_Line    = line.new(time, _mL,   time + 1, _mL,   xloc = xloc.bar_time, extend = extend.right, color = mLevelColor, style = line.style_dotted, width = dwmLineWidth)
+monthly_Low_Line    = line.new(time, _mL,   time + 1, _mL,   xloc = xloc.bar_time, extend = extendLines ? extend.both : extend.right, color = mLevelColor, style = line.style_dotted, width = dwmLineWidth)
 line.delete(monthly_Low_Line[1])
-monthly_Close_Line  = line.new(time, showDwmClose ? _mC : na, time + 1, _mC, xloc = xloc.bar_time, extend = extend.right, color = mLevelColor, style = line.style_dotted, width = dwmLineWidth)
+monthly_Close_Line  = line.new(time, showDwmClose ? _mC : na, time + 1, _mC, xloc = xloc.bar_time, extend = extendLines ? extend.both : extend.right, color = mLevelColor, style = line.style_dotted, width = dwmLineWidth)
 line.delete(monthly_Close_Line[1])
 
 label_daily_High    = label.new(bar_index, _dH, text = dBlank + "Prev D High : " + str.tostring(_dH, format.mintick), color = color.new(color.black, 100), style = label.style_label_left, textcolor = d_Line_Color, size = size.small, textalign = text.align_center)
@@ -278,13 +277,3 @@ label_monthly_Low   = label.new(bar_index, _mL, text = mBlank + "Prev M Low : " 
 label.delete(label_monthly_Low[1])
 label_monthly_Close = label.new(bar_index, showDwmClose ? _mC : na, text = mBlank + "Prev M Close : " + str.tostring(_mC, format.mintick) + "\n", color = color.new(color.black, 100), style = label.style_label_left, textcolor = m_Line_Color, size = size.small, textalign = text.align_center)
 label.delete(label_monthly_Close[1])
-
-// ALERTS ------------------------------
-// check any condition you needed to fire TODO
-isNegcOG = (close[1] < low[2]) and (close[1] < dVwapValue) and timeframe.period == "30m"
-isPosCog = (close[1] > high[2]) and (close[1] > dVwapValue) and timeframe.period == "30m"
-
-alertcondition(shortBbandEntryHtf, title='Short Entry', message='Mean Reversion Alert HTF - Short')
-alertcondition(longBbandEntryHtf, title='Long Entry', message='Mean Reversion Alert HTF - Long')
-// alertcondition(shortBbandEntryLtf and showBbLtf, title='Short Entry', message='Mean Reversion Alert LTF - Short')
-// alertcondition(longBbandEntryLtf and showBbLtf, title='Long Entry', message='Mean Reversion Alert LTF - Long')
