@@ -6,65 +6,72 @@
 indicator(title="Blue's Clues", shorttitle="Blue's Clues", overlay=true)
 
 // SETTINGS -----------------------------
-ema = "EMA"
-bb1 = "BBands HTF"
-bb2 = "BB Toggle"
-bb3 = "BBands LTF"
-vwap = "VWAP"
-dwmLevels = "D/W/M Levels"
-displaySet = display.all - display.price_scale - display.status_line
-groupEma = "20/50/200 EMA"
-groupBb = "BBands - 2 Std. Deviation"
-groupVwap = "Auto Anchored D/W/M VWAP"
-ttBb = "Shows BBands on LTF"
-groupDwmLevels = "D/W/M Levels"
-groupCog = "+/- COG Alerts"
+displaySet          = display.all - display.price_scale - display.status_line
+ema                 = "----------------- EMA ------------------"
+bb1                 = "BBands HTF"
+bb2                 = "BB Toggle"
+bb3                 = "BBands LTF"
+vwap                = "----------------- VWAP -----------------"
+dwmLevels           = "------------- D/W/M Levels -------------"
+sdZoneGroupTxt      = "--------- Supply/Demand Zones ----------"
+sdZoneTFSettingTxt  = "-------- S/D Zone TF Settings ----------" 
+groupEma            = "------------- 20/50/200 EMA ------------"
+groupBb             = "------ BBands - 2 Std. Deviation -------"
+groupVwap           = "------- Auto Anchored D/W/M VWAP -------"
+groupSD             = "------------- Supply/Demand ------------"
+groupSDSettings     = "Supply/Demand Settings"
+ttBb                = "Shows BBands on LTF"
+groupDwmLevels      = "------------- D/W/M Levels -------------"
+groupCog            = "+/- COG Alerts"
 
-displayLtf = timeframe.isintraday and timeframe.multiplier <= 60
-displayHtf = timeframe.isdwm
-displayVwapD = timeframe.period == "D"
-displayVwapLtf = displayLtf
-
-emaColor1 = color.new(color.aqua, 50)
-emaColor2 = color.new(color.blue, 50)
-emaColor3 = color.new(color.purple, 50)
-dVwapColor = color.new(color.gray, 60)
-wVwapColor = color.new(color.yellow, 60)
-mVwapColor = color.new(color.orange, 60)
-yVwapColor = color.new(color.purple, 60)
+emaColor1   = color.new(color.aqua, 50)
+emaColor2   = color.new(color.blue, 50)
+emaColor3   = color.new(color.purple, 50)
+dVwapColor  = color.new(color.gray, 60)
+wVwapColor  = color.new(color.yellow, 60)
+mVwapColor  = color.new(color.orange, 60)
+yVwapColor  = color.new(color.purple, 60)
 dLevelColor = color.new(#4dd0e1, 40)
 wLevelColor = color.new(color.yellow, 40)
 mLevelColor = color.new(color.orange, 40)
-bbColor = color.new(color.gray, 50)
+bbColor     = color.new(color.gray, 50)
 
 // CONDITIONS ----------------------------
-src = close
+tf                  = timeframe.period
+displayLtf          = timeframe.isintraday and timeframe.multiplier <= 60
+displayHtf          = timeframe.isdwm
+displayVwapD        = tf == "D"
+displayVwapLtf      = displayLtf
+
+src    = close
 outLtf = ta.ema(src, 20)
 outMtf = ta.ema(src, 50)
 outHtf = ta.ema(src, 200)
-dev = 2.0 * ta.stdev(close, 20)
+dev    = 2.0 * ta.stdev(close, 20)
 
 upperHtf = outLtf + dev
 lowerHtf = outLtf - dev
 upperLtf = outLtf + dev
 lowerLtf = outLtf - dev
 
-shortBbandEntryHtf = close > upperHtf
-longBbandEntryHtf = close < lowerHtf
+shortBbandEntryHtf      = close > upperHtf
+longBbandEntryHtf       = close < lowerHtf
 
-MILLIS_IN_DAY = 86400000
-dwmBarTime = timeframe.isdwm ? time : time("D")
+MILLIS_IN_DAY   = 86400000
+dwmBarTime      = timeframe.isdwm ? time : time("D")
 
-dBlank   = "\n‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏"
-wBlank   = "\n‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏"
-mBlank   = "‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏"
+dBlank              = "\n‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏"
+wBlank              = "\n‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏"
+mBlank              = "‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏"
 
-[_dH, _dL, _dC] = request.security(syminfo.tickerid, "D", [high[1], low[1], close[1]],  barmerge.gaps_off, barmerge.lookahead_on)
-[_wH, _wL, _wC] = request.security(syminfo.tickerid, "W", [high[1], low[1], close[1]],  barmerge.gaps_off, barmerge.lookahead_on)
-[_mH, _mL, _mC] = request.security(syminfo.tickerid, "M", [high[1], low[1], close[1]],  barmerge.gaps_off, barmerge.lookahead_on)
+[_dH, _dL, _dC]                         = request.security(syminfo.tickerid, "D", [high[1], low[1], close[1]],  barmerge.gaps_off, barmerge.lookahead_on)
+[_wH, _wL, _wC]                         = request.security(syminfo.tickerid, "W", [high[1], low[1], close[1]],  barmerge.gaps_off, barmerge.lookahead_on)
+[_mH, _mL, _mC]                         = request.security(syminfo.tickerid, "M", [high[1], low[1], close[1]],  barmerge.gaps_off, barmerge.lookahead_on)
 
-isBearishTrend = outLtf < outMtf
-isBullishTrend = not isBearishTrend
+isBearishTrend      = outLtf < outMtf
+isBullishTrend      = not isBearishTrend
+
+legOutCandleSize    = 2.0
 
 // INPUTS --------------------------------
 
@@ -74,7 +81,7 @@ htfColor = input(defval = emaColor3, title="200 EMA", inline = ema, group = grou
 
 upperHtfColor = input(defval = bbColor, title="Upper HTF Band", inline = bb1, group = groupBb)
 lowerHtfColor = input(defval = bbColor, title="Lower HTF Band", inline = bb1, group = groupBb)
-showBbLtf = input.bool(defval = false, title = "Show BB on LTF", inline = bb2, group = groupBb)
+showBbLtf     = input.bool(defval = false, title = "Show BB on LTF", inline = bb2, group = groupBb)
 upperLtfColor = input(defval = bbColor, title="Upper LTF Band", inline = bb3, group = groupBb)
 lowerLtfColor = input(defval = bbColor, title="Lower LTF Band", inline = bb3, group = groupBb)
 
@@ -90,6 +97,38 @@ extendLines     = input.bool(defval = false, title = "Extend Levels Across Scree
 showDwmClose    = input.bool(defval = false, title = "Show Close?", inline = dwmLevels)
 dwmLineWidth    = input.int(defval = 2, title = "Levels Line Width", minval = 1, maxval = 4, step = 1, group = groupDwmLevels)
 
+showHTFsdZones   = input.bool(true, title = "Show HTF Supply/Demand Zones?", inline = sdZoneGroupTxt, group = groupSD)
+showLTFsdZones   = input.bool(true, title = "Show LTF Supply/Demand Zones?", inline = sdZoneGroupTxt, group = groupSD)
+sdColorLTF       = input.color(defval = #caebf81a, title = 'LTF S/D Color', inline = "LTF Color", group = groupSD)
+sdBorderColorLTF = input.color(defval = #caebf81a, title = 'LTF S/D Border Color', inline = "LTF Color", group = groupSD)
+sdColorD         = input.color(defval = #00a2ff1a, title = 'D S/D Color', inline = "D Color", group = groupSD)
+sdBorderColorD   = input.color(defval = #00a2ff1a, title = 'D S/D Border Color', inline = "D Color", group = groupSD)
+sdColorW         = input.color(defval = #fcf7001a, title = 'W S/D Color', inline = "W Color", group = groupSD)
+sdBorderColorW   = input.color(defval = #fcf7001a, title = 'W S/D Border Color', inline = "W Color", group = groupSD)
+sdColorM         = input.color(defval = #fc87011a, title = 'M S/D Color', inline = "M Color", group = groupSD)
+sdBorderColorM   = input.color(defval = #fc87011a, title = 'M S/D Border Color', inline = "M Color", group = groupSD)
+
+sdOffset        = input.int(defval = 2, minval = 0, maxval = 30, title="Extend Zones", group = groupSDSettings, tooltip = 'Extends Zone X number of bars past current price')
+showZoneText    = input(true, title = "Show Zone Text", inline = "ZoneTxt", group = groupSDSettings)
+sdZoneTextColor = input.color(defval = color.rgb(255, 255, 255), title = 'S/D Zone Text Color', group = groupSDSettings)
+sdTextAlignV    = input.string("Top", title="Text Align (Vertical)", options=["Top", "Center", "Bottom"], group = groupSDSettings)
+show2mZones     = input.bool(false, title="Show 2m", inline = "LTF", group = groupSDSettings)
+show5mZones     = input.bool(false, title="Show 5m", inline = "LTF", group = groupSDSettings)
+show15mZones    = input.bool(false, title="Show 15m", inline = "LTF", group = groupSDSettings)
+show30mZones    = input.bool(false, title="Show 30m", inline = "ITF", group = groupSDSettings)
+show60mZones    = input.bool(false, title="Show 60m", inline = "ITF", group = groupSDSettings)
+show4hZones     = input.bool(false, title="Show 4h", inline = "ITF", group = groupSDSettings)
+showDZones      = input.bool(true, title="Show D", inline = "HTF", group = groupSDSettings)
+showWZones      = input.bool(true, title="Show W", inline = "HTF", group = groupSDSettings)
+showMZones      = input.bool(true, title="Show M", inline = "HTF", group = groupSDSettings)
+
+if sdTextAlignV == 'Bottom'
+    sdTextAlignV := text.align_bottom
+if sdTextAlignV == 'Center'
+    sdTextAlignV := text.align_center
+if sdTextAlignV == 'Top'
+    sdTextAlignV := text.align_top
+
 // EMAs -----------------------------
 plot(outLtf, title="EMA-20", color = ltfColor, offset = 0, linewidth = 2, display = displaySet)
 plot(displayLtf ? outMtf : na, title="EMA-50", color = mtfColor, offset = 0, linewidth = 2, display = displaySet)
@@ -97,10 +136,10 @@ plot(displayHtf ? outHtf : na, title="EMA-200", color = htfColor, offset = 0, li
 
 // B BANDS --------------------------
 
-p1Htf = plot(displayHtf ? upperHtf : na, "Upper BBand", color = upperHtfColor, display = displaySet)
-p2Htf = plot(displayHtf ? lowerHtf : na, "Lower BBand", color = lowerHtfColor, display = displaySet)
-p1Ltf = plot(displayVwapLtf and showBbLtf ? upperLtf : na, color = upperLtfColor, display = displaySet)
-p2Ltf = plot(displayVwapLtf and showBbLtf ? lowerLtf : na, color = lowerLtfColor, display = displaySet)
+p1Htf = plot(displayHtf ? upperHtf : na, "HTF Upper BBand", color = upperHtfColor, display = displaySet)
+p2Htf = plot(displayHtf ? lowerHtf : na, "HTF Lower BBand", color = lowerHtfColor, display = displaySet)
+p1Ltf = plot(displayVwapLtf and showBbLtf ? upperLtf : na, "LTF Upper Band", color = upperLtfColor, display = displaySet)
+p2Ltf = plot(displayVwapLtf and showBbLtf ? lowerLtf : na, "LTF Lower Band", color = lowerLtfColor, display = displaySet)
 
 // VWAP ---------------------------------
 // If it's a short day, then there could be no daily bar. Take a previous one.
@@ -230,10 +269,10 @@ dVwapValue = sumSrcD / sumVolD
 wVwapValue = sumSrcW / sumVolW
 mVwapValue = sumSrcM / sumVolM
 yVwapValue = sumSrcY / sumVolY
-plot(dVwapValue, title="D VWAP", style = plot.style_circles, linewidth = 2, color=dvColor, display = displaySet)
+plot(dVwapValue, title="D VWAP", style = plot.style_circles, color=dvColor, linewidth = 2, display = displaySet)
 plot(wVwapValue, title="W VWAP", style = plot.style_circles, color=wvColor, linewidth = 2, display = displaySet)
-plot(mVwapValue, title="M VWAP", style = plot.style_circles, color=mVwapColor, display = displaySet)
-plot(yVwapValue, title="Y VWAP", style = plot.style_circles, color=yVwapColor, display = displaySet)
+plot(mVwapValue, title="M VWAP", style = plot.style_circles, color=mvColor, display = displaySet)
+plot(yVwapValue, title="Y VWAP", style = plot.style_circles, color=yvColor, display = displaySet)
 
 // DWM PRICE LEVELS --------------------------
 daily_High_Line     = line.new(time, _dH, time + 1, _dH, xloc = xloc.bar_time, extend = extendLines ? extend.both : extend.right, color = dLevelColor, style = line.style_dotted, width = dwmLineWidth)
@@ -277,3 +316,147 @@ label_monthly_Low   = label.new(bar_index, _mL, text = mBlank + "Prev M Low : " 
 label.delete(label_monthly_Low[1])
 label_monthly_Close = label.new(bar_index, showDwmClose ? _mC : na, text = mBlank + "Prev M Close : " + str.tostring(_mC, format.mintick) + "\n", color = color.new(color.black, 100), style = label.style_label_left, textcolor = m_Line_Color, size = size.small, textalign = text.align_center)
 label.delete(label_monthly_Close[1])
+
+// Supply and Demand Zones -----------------------------------------
+if tf == 'D'
+    tf := '1440'
+if tf == 'W'
+    tf := '10080'
+if showLTFsdZones
+    tf := '1'
+
+momentCTD           = math.round(time(tf) + (sdOffset * 60000 * str.tonumber(tf)))
+var box[] supply_HT = array.new_box()
+var box[] demand_HT = array.new_box()
+
+drawSupplyZone(formattedTf, ctd_ht, top_ht, ctd, bot_ht, box_color, border_color) =>
+    box supply = box.new(left=ctd_ht, top=top_ht, right=ctd, bgcolor=box_color, bottom=bot_ht, xloc=xloc.bar_time)
+    box.set_border_color(supply, border_color)
+    if showZoneText
+        box.set_text(supply, formattedTf)
+        box.set_text_size(supply, size.small)
+        box.set_text_color(supply, sdZoneTextColor)
+        box.set_text_halign(supply, text.align_right)
+        box.set_text_valign(supply, sdTextAlignV)
+    array.push(supply_HT, supply)
+
+drawDemandZone(formattedTf, ctd_ht, top_ht, ctd, bot_ht, box_color, border_color) =>
+    box demand = box.new(left=ctd_ht, top=top_ht, right=ctd, bottom=bot_ht, bgcolor=box_color, xloc=xloc.bar_time)
+    box.set_border_color(demand, border_color)
+    if showZoneText
+        box.set_text(demand, formattedTf)
+        box.set_text_size(demand, size.small)
+        box.set_text_color(demand, sdZoneTextColor)
+        box.set_text_halign(demand, text.align_right)
+        box.set_text_valign(demand, sdTextAlignV)
+    array.push(demand_HT, demand)
+
+// drawZone(formattedTf, left_ctd_ht, top_ht, ctd_ht, bot_ht, box_color, border_color) =>
+
+
+createZones(timeframe) => 
+    [open_HT, high_HT, low_HT, close_HT]    = request.security(syminfo.tickerid, timeframe, [open[1], high[1], low[1], close[1]], lookahead = barmerge.lookahead_on)
+
+    redCandle_HT        = close_HT < open_HT
+    greenCandle_HT      = close_HT > open_HT
+    neutralCandle_HT    = close_HT == open_HT
+    candleChange_HT     = math.abs(close_HT - open_HT)
+
+    formatTf            = ""
+    bgColorForBox       = sdColorLTF
+    borderColorForBox   = sdBorderColorLTF
+
+    if timeframe == '2'
+        formatTf := '2m'
+    else if timeframe == '5'
+        formatTf := '5m'
+    else if timeframe == '15'
+        formatTf := '15m'
+    else if timeframe == '30'
+        formatTf := '30m'
+    else if timeframe == '45'
+        formatTf := '45m'
+    else if timeframe == '60'
+        formatTf := '1h'
+    else if timeframe == '240'
+        formatTf := '4h'
+    else if timeframe == 'D'
+        formatTf := 'D'
+        bgColorForBox := sdColorD
+        borderColorForBox := sdBorderColorD
+    else if timeframe == 'W'
+        formatTf := 'W'
+        bgColorForBox := sdColorW
+        borderColorForBox := sdBorderColorW
+    else if timeframe == 'M'
+        formatTf := 'M'
+        bgColorForBox := sdColorM
+        borderColorForBox := sdBorderColorM    
+    // test M    
+
+    var float bottomBox_HT = na
+    var float topBox_HT = na
+    momentCTD_HT = time(timeframe)[2]
+
+    if (((redCandle_HT and greenCandle_HT[1]) or (redCandle_HT and neutralCandle_HT[1])) and (candleChange_HT / candleChange_HT[1]) >= legOutCandleSize and barstate.isconfirmed[1] and (showHTFsdZones or showLTFsdZones) and close_HT[1] >= close_HT and open_HT[1] <= open_HT)
+
+        if high_HT >= high_HT[1]
+            topBox_HT := high_HT
+        else 
+            topBox_HT := high_HT[1]
+
+        drawSupplyZone(formatTf, momentCTD_HT, topBox_HT, momentCTD, open_HT[1], bgColorForBox, borderColorForBox)
+  
+    if (((greenCandle_HT and redCandle_HT[1]) or (greenCandle_HT and neutralCandle_HT[1])) and (candleChange_HT / candleChange_HT[1]) >= legOutCandleSize and barstate.isconfirmed[1] and (showHTFsdZones or showLTFsdZones) and close_HT[1] <= close_HT and open_HT[1] >= open_HT)
+
+        if low_HT <= low_HT[1]
+            bottomBox_HT := low_HT
+        else 
+            bottomBox_HT := low_HT[1]
+
+        drawDemandZone(formatTf, momentCTD_HT, open_HT[1], momentCTD, bottomBox_HT, bgColorForBox, borderColorForBox)
+
+if show2mZones and str.tonumber(tf) <= 2
+    createZones('2')
+if show5mZones and str.tonumber(tf) <= 5
+    createZones('5')
+if show15mZones and str.tonumber(tf) <= 15
+    createZones('15')
+if show30mZones and str.tonumber(tf) <= 30
+    createZones('30')
+if show60mZones and str.tonumber(tf) <= 60
+    createZones('60')
+if show4hZones and str.tonumber(tf) <= 240
+    createZones('240') 
+if showDZones and str.tonumber(tf) <= 1440
+    createZones('D')
+if showWZones and str.tonumber(tf) <= 10080
+    createZones('W')
+if showMZones and str.tonumber(tf) <= 43800
+    createZones('M')
+
+i = 0
+while i < array.size(supply_HT) and array.size(supply_HT) > 0
+    box currentBox = array.get(supply_HT, i)
+    float breakLevel = box.get_top(currentBox)
+    if high > breakLevel 
+        array.remove(supply_HT, i)
+        box.delete(currentBox)
+        int(na)
+    else
+        box.set_right(currentBox, momentCTD)
+        i += 1
+        int(na)
+
+i2 = 0
+while i2 < array.size(demand_HT) and array.size(demand_HT) > 0
+    box currentBox = array.get(demand_HT, i2)
+    float breakLevel = box.get_bottom(currentBox)
+    if low < breakLevel 
+        array.remove(demand_HT, i2)
+        box.delete(currentBox)
+        int(na)
+    else
+        box.set_right(currentBox, momentCTD)
+        i2 += 1
+        int(na)
