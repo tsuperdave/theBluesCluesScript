@@ -23,7 +23,7 @@ groupSDSettings     = "-------- Supply/Demand Settings --------"
 ttBb                = "Shows BBands on LTF"
 groupDwmLevels      = "------------- D/W/M Levels -------------"
 groupCog            = "+/- COG Alerts"
-groupAPlusPanel     = " A+ Panel"
+groupAPlusPanel     = "-------------- A+ Panel  ---------------"
 
 emaColor1           = color.new(color.aqua, 50)
 emaColor2           = color.new(color.blue, 50)
@@ -51,6 +51,7 @@ displayHtf          = timeframe.isdwm
 displayVwapD        = tf == "D"
 displayVwapLtf      = displayLtf
 isFutures           = syminfo.type == 'futures'
+isForex             = syminfo.type == 'forex'
 
 src    = close
 outLtf = ta.ema(src, 20)
@@ -291,10 +292,10 @@ dVwapValue = sumSrcD / sumVolD
 wVwapValue = sumSrcW / sumVolW
 mVwapValue = sumSrcM / sumVolM
 yVwapValue = sumSrcY / sumVolY
-plot(dVwapValue, title="D VWAP", style = plot.style_circles, color=dvColor, linewidth = 2, display = displaySet)
-plot(wVwapValue, title="W VWAP", style = plot.style_circles, color=wvColor, linewidth = 2, display = displaySet)
-plot(mVwapValue, title="M VWAP", style = plot.style_circles, color=mvColor, display = displaySet)
-plot(yVwapValue, title="Y VWAP", style = plot.style_circles, color=yvColor, display = displaySet)
+plot(not isForex ? dVwapValue : na, title="D VWAP", style = plot.style_circles, color=dvColor, linewidth = 2, display = displaySet)
+plot(not isForex ? wVwapValue : na, title="W VWAP", style = plot.style_circles, color=wvColor, linewidth = 2, display = displaySet)
+plot(not isForex ? mVwapValue : na, title="M VWAP", style = plot.style_circles, color=mvColor, display = displaySet)
+plot(not isForex ? yVwapValue : na, title="Y VWAP", style = plot.style_circles, color=yvColor, display = displaySet)
 
 // DWM / Globex PRICE LEVELS --------------------------
 // show gLvlv? Update plot start for globex level and ray to right. replace 'time' with start time of new hi/lo
