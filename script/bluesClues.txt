@@ -19,29 +19,38 @@ groupEma            = "------------- 20/50/200 EMA ------------"
 groupBb             = "------ BBands - 2 Std. Deviation -------"
 groupVwap           = "------- Auto Anchored D/W/M VWAP -------"
 groupSD             = "------------- Supply/Demand ------------"
-groupSDSettings     = "Supply/Demand Settings"
+groupSDSettings     = "-------- Supply/Demand Settings --------"
 ttBb                = "Shows BBands on LTF"
 groupDwmLevels      = "------------- D/W/M Levels -------------"
 groupCog            = "+/- COG Alerts"
+groupAPlusPanel     = " A+ Panel"
 
-emaColor1   = color.new(color.aqua, 50)
-emaColor2   = color.new(color.blue, 50)
-emaColor3   = color.new(color.purple, 50)
-dVwapColor  = color.new(color.gray, 60)
-wVwapColor  = color.new(color.yellow, 60)
-mVwapColor  = color.new(color.orange, 60)
-yVwapColor  = color.new(color.purple, 60)
-dLevelColor = color.new(#4dd0e1, 40)
-wLevelColor = color.new(color.yellow, 40)
-mLevelColor = color.new(color.orange, 40)
-bbColor     = color.new(color.gray, 50)
+emaColor1           = color.new(color.aqua, 50)
+emaColor2           = color.new(color.blue, 50)
+emaColor3           = color.new(color.purple, 50)
+dVwapColor          = color.new(color.gray, 60)
+wVwapColor          = color.new(color.yellow, 60)
+mVwapColor          = color.new(color.orange, 60)
+yVwapColor          = color.new(color.purple, 60)
+globexLevelColor    = color.rgb(120, 123, 134, 17)
+dLevelColor         = color.rgb(16, 105, 207, 18)
+wLevelColor         = color.rgb(218, 221, 8, 5)
+mLevelColor         = color.rgb(255, 153, 0, 23)
+bbColor             = color.new(color.gray, 50)
 
-// CONDITIONS ----------------------------
+// GLOBALS /  CALCS ----------------------------
+Offset(X)=>
+    Bar=math.min(time - time[1], time[1] - time[2])
+    time + Bar * (1 + X * 1)
+f_get_changePercentage(_p1, _p2) => (_p1 - _p2) * 100 / _p2
+
 tf                  = timeframe.period
-displayLtf          = timeframe.isintraday and timeframe.multiplier <= 60
+displayLtf          = timeframe.isintraday and timeframe.multiplier <= 5
+displayMtf          = timeframe.isintraday and (timeframe.multiplier >= 6 and timeframe.multiplier <= 60)
 displayHtf          = timeframe.isdwm
 displayVwapD        = tf == "D"
 displayVwapLtf      = displayLtf
+isFutures           = syminfo.type == 'futures'
 
 src    = close
 outLtf = ta.ema(src, 20)
@@ -60,16 +69,20 @@ longBbandEntryHtf       = close < lowerHtf
 MILLIS_IN_DAY   = 86400000
 dwmBarTime      = timeframe.isdwm ? time : time("D")
 
+globexBlank         = "\n‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏"
 dBlank              = "\n‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏"
 wBlank              = "\n‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏"
 mBlank              = "‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏"
 
+[_gT, _gH, _gL]                         = request.security(syminfo.tickerid, "720", [time[1], high[1], low[1]],  barmerge.gaps_off, barmerge.lookahead_on)
 [_dH, _dL, _dC]                         = request.security(syminfo.tickerid, "D", [high[1], low[1], close[1]],  barmerge.gaps_off, barmerge.lookahead_on)
 [_wH, _wL, _wC]                         = request.security(syminfo.tickerid, "W", [high[1], low[1], close[1]],  barmerge.gaps_off, barmerge.lookahead_on)
 [_mH, _mL, _mC]                         = request.security(syminfo.tickerid, "M", [high[1], low[1], close[1]],  barmerge.gaps_off, barmerge.lookahead_on)
 
-isBearishTrend      = outLtf < outMtf
-isBullishTrend      = not isBearishTrend
+is20and200Bullish       = outLtf > outHtf     
+is20and50Bullish        = outLtf > outMtf
+is20and200Bearish       = not is20and200Bullish
+is20and50Bearish        = not is20and50Bullish
 
 legOutCandleSize    = 2.0
 
@@ -90,17 +103,19 @@ wvColor = input(defval = wVwapColor, title="W VWAP Color", inline = vwap, group 
 mvColor = input(defval = mVwapColor, title="M VWAP Color", inline = vwap, group = groupVwap)
 yvColor = input(defval = yVwapColor, title="Y VWAP Color", inline = vwap, group = groupVwap)
 
-d_Line_Color    = input.color(defval = dLevelColor, title = "Daily Level", inline = dwmLevels, group = groupDwmLevels)
-w_Line_Color    = input.color(defval = wLevelColor, title = "Weekly Level",  inline = dwmLevels, group = groupDwmLevels)
-m_Line_Color    = input.color(defval = mLevelColor, title = "Monthly Level", inline = dwmLevels, group = groupDwmLevels)
-extendLines     = input.bool(defval = false, title = "Extend Levels Across Screen?", inline = dwmLevels, group = groupDwmLevels)
-showDwmClose    = input.bool(defval = false, title = "Show Close?", inline = dwmLevels)
-dwmLineWidth    = input.int(defval = 2, title = "Levels Line Width", minval = 1, maxval = 4, step = 1, group = groupDwmLevels)
+globex_Line_Color   = input.color(defval = globexLevelColor, title = "Daily Level", inline = dwmLevels, group = groupDwmLevels)
+d_Line_Color        = input.color(defval = dLevelColor, title = "Daily Level", inline = dwmLevels, group = groupDwmLevels)
+w_Line_Color        = input.color(defval = wLevelColor, title = "Weekly Level",  inline = dwmLevels, group = groupDwmLevels)
+m_Line_Color        = input.color(defval = mLevelColor, title = "Monthly Level", inline = dwmLevels, group = groupDwmLevels)
+showGlobexLevels    = input.bool(defval = true, title = "Show Globex Hi/Lo?", inline = dwmLevels, group = groupDwmLevels)
+extendLines         = input.bool(defval = false, title = "Extend Levels Across Screen?", inline = dwmLevels, group = groupDwmLevels)
+showDwmClose        = input.bool(defval = false, title = "Show Close?", inline = dwmLevels)
+dwmLineWidth        = input.int(defval = 2, title = "Levels Line Width", minval = 1, maxval = 4, step = 1, group = groupDwmLevels)
 
 showHTFsdZones   = input.bool(true, title = "Show HTF Supply/Demand Zones?", inline = sdZoneGroupTxt, group = groupSD)
 showLTFsdZones   = input.bool(true, title = "Show LTF Supply/Demand Zones?", inline = sdZoneGroupTxt, group = groupSD)
-sdColorLTF       = input.color(defval = #caebf81a, title = 'LTF S/D Color', inline = "LTF Color", group = groupSD)
-sdBorderColorLTF = input.color(defval = #caebf81a, title = 'LTF S/D Border Color', inline = "LTF Color", group = groupSD)
+sdColorLTF       = input.color(defval = #e7c6fd7a, title = 'LTF S/D Color', inline = "LTF Color", group = groupSD)
+sdBorderColorLTF = input.color(defval = #e7c6fd7a, title = 'LTF S/D Border Color', inline = "LTF Color", group = groupSD)
 sdColorD         = input.color(defval = #00a2ff1a, title = 'D S/D Color', inline = "D Color", group = groupSD)
 sdBorderColorD   = input.color(defval = #00a2ff1a, title = 'D S/D Border Color', inline = "D Color", group = groupSD)
 sdColorW         = input.color(defval = #fcf7001a, title = 'W S/D Color', inline = "W Color", group = groupSD)
@@ -110,7 +125,7 @@ sdBorderColorM   = input.color(defval = #fc87011a, title = 'M S/D Border Color',
 
 sdOffset        = input.int(defval = 2, minval = 0, maxval = 30, title="Extend Zones", group = groupSDSettings, tooltip = 'Extends Zone X number of bars past current price')
 showZoneText    = input(true, title = "Show Zone Text", inline = "ZoneTxt", group = groupSDSettings)
-sdZoneTextColor = input.color(defval = color.rgb(255, 255, 255), title = 'S/D Zone Text Color', group = groupSDSettings)
+sdZoneTextColor = input.color(defval = color.rgb(0, 0, 0), title = 'S/D Zone Text Color', group = groupSDSettings)
 sdTextAlignV    = input.string("Top", title="Text Align (Vertical)", options=["Top", "Center", "Bottom"], group = groupSDSettings)
 show2mZones     = input.bool(false, title="Show 2m", inline = "LTF", group = groupSDSettings)
 show5mZones     = input.bool(false, title="Show 5m", inline = "LTF", group = groupSDSettings)
@@ -129,13 +144,14 @@ if sdTextAlignV == 'Center'
 if sdTextAlignV == 'Top'
     sdTextAlignV := text.align_top
 
+showAPlusPanel  = input.bool(false, title="Show A+ Setup Helper", inline = "Panel", group = groupAPlusPanel)
+
 // EMAs -----------------------------
 plot(outLtf, title="EMA-20", color = ltfColor, offset = 0, linewidth = 2, display = displaySet)
-plot(displayLtf ? outMtf : na, title="EMA-50", color = mtfColor, offset = 0, linewidth = 2, display = displaySet)
-plot(displayHtf ? outHtf : na, title="EMA-200", color = htfColor, offset = 0, linewidth = 2, display = displaySet)
+plot(displayMtf ? outMtf : na, title="EMA-50", color = mtfColor, offset = 0, linewidth = 2, display = displaySet)
+plot(displayHtf or displayLtf ? outHtf : na, title="EMA-200", color = htfColor, offset = 0, linewidth = 2, display = displaySet)
 
 // B BANDS --------------------------
-
 p1Htf = plot(displayHtf ? upperHtf : na, "HTF Upper BBand", color = upperHtfColor, display = displaySet)
 p2Htf = plot(displayHtf ? lowerHtf : na, "HTF Lower BBand", color = lowerHtfColor, display = displaySet)
 p1Ltf = plot(displayVwapLtf and showBbLtf ? upperLtf : na, "LTF Upper Band", color = upperLtfColor, display = displaySet)
@@ -159,6 +175,9 @@ isSameDay(t1, t2) =>
     dayofmonth(t1) == dayofmonth(t2) and
   month(t1) == month(t2) and
   year(t1) == year(t2)
+
+//  isGlobex() =>
+//      not (request.security(syminfo.tickerid, "D", isSameDay(time, time_close), barmerge.gaps_on, barmerge.lookahead_on))
 
 tradingDayStart(t) =>
     y = year(t)
@@ -191,7 +210,10 @@ isNewWPeriod() =>
     isNew = false
     if tradingDay != nz(tradingDay[1])
         DAYS_IN_WEEK = 7
-        isNew := makeMondayZero(dayofweek(periodStartW)) + numDaysBetween(periodStartW, tradingDay) >= DAYS_IN_WEEK
+        if isFutures
+            isNew := dayofweek(periodStartW) + numDaysBetween(periodStartW, tradingDay) >= DAYS_IN_WEEK
+        else
+            isNew := makeMondayZero(dayofweek(periodStartW)) + numDaysBetween(periodStartW, tradingDay) >= DAYS_IN_WEEK
             
     isNew
 
@@ -274,27 +296,39 @@ plot(wVwapValue, title="W VWAP", style = plot.style_circles, color=wvColor, line
 plot(mVwapValue, title="M VWAP", style = plot.style_circles, color=mvColor, display = displaySet)
 plot(yVwapValue, title="Y VWAP", style = plot.style_circles, color=yvColor, display = displaySet)
 
-// DWM PRICE LEVELS --------------------------
-daily_High_Line     = line.new(time, _dH, time + 1, _dH, xloc = xloc.bar_time, extend = extendLines ? extend.both : extend.right, color = dLevelColor, style = line.style_dotted, width = dwmLineWidth)
+// DWM / Globex PRICE LEVELS --------------------------
+// show gLvlv? Update plot start for globex level and ray to right. replace 'time' with start time of new hi/lo
+// if syminfo.type == 'futures' and showGlobexLevels
+//     globex_High_Line     = line.new(Offset(10), _gH, _gT, _gH, xloc = xloc.bar_time, extend = extend.right, color = globex_Line_Color, style = line.style_solid, width = dwmLineWidth)
+//     line.delete(globex_High_Line[1])
+//     globex_Low_Line      = line.new(Offset(10), _gL, _gT, _gL, xloc = xloc.bar_time, extend = extend.right, color = globex_Line_Color, style = line.style_solid, width = dwmLineWidth)
+//     line.delete(globex_Low_Line[1])
+
+daily_High_Line     = line.new(time, _dH, time + 1, _dH, xloc = xloc.bar_time, extend = extendLines ? extend.both : extend.right, color = d_Line_Color, style = line.style_dotted, width = dwmLineWidth)
 line.delete(daily_High_Line[1])
-daily_Low_Line      = line.new(time, _dL, time + 1, _dL, xloc = xloc.bar_time, extend = extendLines ? extend.both : extend.right, color = dLevelColor, style = line.style_dotted, width = dwmLineWidth)
+daily_Low_Line      = line.new(time, _dL, time + 1, _dL, xloc = xloc.bar_time, extend = extendLines ? extend.both : extend.right, color = d_Line_Color, style = line.style_dotted, width = dwmLineWidth)
 line.delete(daily_Low_Line[1])
-daily_Close_Line    = line.new(time, showDwmClose ? _dC : na, time + 1, _dC, xloc = xloc.bar_time, extend = extendLines ? extend.both : extend.right, color = dLevelColor, style = line.style_dotted, width = dwmLineWidth)
+daily_Close_Line    = line.new(time, showDwmClose ? _dC : na, time + 1, _dC, xloc = xloc.bar_time, extend = extendLines ? extend.both : extend.right, color = d_Line_Color, style = line.style_dotted, width = dwmLineWidth)
 line.delete(daily_Close_Line[1])
 
-weekly_High_Line    = line.new(time, _wH, time + 1, _wH, xloc = xloc.bar_time, extend = extendLines ? extend.both : extend.right, color = wLevelColor, style = line.style_dotted, width = dwmLineWidth)
+weekly_High_Line    = line.new(time, _wH, time + 1, _wH, xloc = xloc.bar_time, extend = extendLines ? extend.both : extend.right, color = w_Line_Color, style = line.style_dotted, width = dwmLineWidth)
 line.delete(weekly_High_Line[1])
-weekly_Low_Line     = line.new(time, _wL, time + 1, _wL, xloc = xloc.bar_time, extend = extendLines ? extend.both : extend.right, color = wLevelColor, style = line.style_dotted, width = dwmLineWidth)
+weekly_Low_Line     = line.new(time, _wL, time + 1, _wL, xloc = xloc.bar_time, extend = extendLines ? extend.both : extend.right, color = w_Line_Color, style = line.style_dotted, width = dwmLineWidth)
 line.delete(weekly_Low_Line[1])
-weekly_Close_Line   = line.new(time, showDwmClose ? _wC : na,  time + 1, _wC,  xloc = xloc.bar_time, extend = extendLines ? extend.both : extend.right, color = wLevelColor, style = line.style_dotted, width = dwmLineWidth)
+weekly_Close_Line   = line.new(time, showDwmClose ? _wC : na,  time + 1, _wC,  xloc = xloc.bar_time, extend = extendLines ? extend.both : extend.right, color = w_Line_Color, style = line.style_dotted, width = dwmLineWidth)
 line.delete(weekly_Close_Line[1])
 
-monthly_High_Line   = line.new(time, _mH,  time + 1, _mH,  xloc = xloc.bar_time, extend = extendLines ? extend.both : extend.right, color = mLevelColor, style = line.style_dotted, width = dwmLineWidth)
+monthly_High_Line   = line.new(time, _mH,  time + 1, _mH,  xloc = xloc.bar_time, extend = extendLines ? extend.both : extend.right, color = m_Line_Color, style = line.style_dotted, width = dwmLineWidth)
 line.delete(monthly_High_Line[1])
-monthly_Low_Line    = line.new(time, _mL,   time + 1, _mL,   xloc = xloc.bar_time, extend = extendLines ? extend.both : extend.right, color = mLevelColor, style = line.style_dotted, width = dwmLineWidth)
+monthly_Low_Line    = line.new(time, _mL,   time + 1, _mL,   xloc = xloc.bar_time, extend = extendLines ? extend.both : extend.right, color = m_Line_Color, style = line.style_dotted, width = dwmLineWidth)
 line.delete(monthly_Low_Line[1])
-monthly_Close_Line  = line.new(time, showDwmClose ? _mC : na, time + 1, _mC, xloc = xloc.bar_time, extend = extendLines ? extend.both : extend.right, color = mLevelColor, style = line.style_dotted, width = dwmLineWidth)
+monthly_Close_Line  = line.new(time, showDwmClose ? _mC : na, time + 1, _mC, xloc = xloc.bar_time, extend = extendLines ? extend.both : extend.right, color = m_Line_Color, style = line.style_dotted, width = dwmLineWidth)
 line.delete(monthly_Close_Line[1])
+
+// label_globex_High    = label.new(bar_index, _gH, text = globexBlank + "Globex Hi : " + str.tostring(_gH, format.mintick), color = color.new(color.black, 100), style = label.style_label_left, textcolor = globex_Line_Color, size = size.small, textalign = text.align_center)
+// label.delete(label_globex_High[1])
+// label_globex_Low     = label.new(bar_index, _gL, text = globexBlank + "Globex Lo : "  +  str.tostring(_gL, format.mintick), color = color.new(color.black, 100), style = label.style_label_left, textcolor = globex_Line_Color, size = size.small, textalign = text.align_center)
+// label.delete(label_globex_Low[1])
 
 label_daily_High    = label.new(bar_index, _dH, text = dBlank + "Prev D High : " + str.tostring(_dH, format.mintick), color = color.new(color.black, 100), style = label.style_label_left, textcolor = d_Line_Color, size = size.small, textalign = text.align_center)
 label.delete(label_daily_High[1])
