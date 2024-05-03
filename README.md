@@ -12,7 +12,7 @@ STILL TESTING:
 Automatic Supply and Demand Zones, configurable from M down to 2m.  
     
 UPCOMING:  
-    
+COG Finder.      
 Auto Anchored Fade VWAPS?  
 Auto Globex High/Low for previous session.  
 A+ Trade finder (will post details on system once testing phase).  
