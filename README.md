@@ -10,12 +10,14 @@ Automatic Previous D/W/M high and lows.
 STILL TESTING: 
     
 Automatic Supply and Demand Zones, configurable from M down to 2m.  
+COG Locator -> Must be above/below 20ema and D VWAP
     
 UPCOMING:  
 
-COG Finder.      
+~~COG Finder.~~      
 Auto Anchored Fade VWAPS?  
 Auto Globex High/Low for previous session.  
+Toggle historical VWAPS.  
 A+ Trade finder (will post details on system once testing phase).  
     
 HOW TO USE: 
