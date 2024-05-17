@@ -6,46 +6,39 @@
 indicator(title="Blue's Clues", shorttitle="Blue's Clues", overlay=true)
 
 // SETTINGS -----------------------------
-var displaySet          = display.all - display.price_scale - display.status_line
-// ---- display Sets / groups
-// ---- colors
-var emaColor20          = color.new(color.aqua, 50)
-var emaColor50          = color.new(color.blue, 50)
-var emaColor200         = color.new(color.purple, 50)
-var dVwapColor          = color.new(color.gray, 60)
-var wVwapColor          = color.new(color.yellow, 60)
-var mVwapColor          = color.new(color.orange, 60)
-// var yVwapColor       = color.new(color.purple, 60)
-var globexLevelColor    = color.rgb(189, 190, 192, 17)
-var dLevelColor         = color.rgb(16, 105, 207, 18)
-var wLevelColor         = color.rgb(218, 221, 8, 5)
-var mLevelColor         = color.rgb(255, 153, 0, 23)
-var bbColor             = color.new(color.gray, 50)
-var cogBgColor_pos      = color.new(color.green, 90)
-var cogBgColor_neg      = color.new(color.red, 90)
-// ---- text
-var ema                 = "----------------- EMA ------------------"
-var bb1                 = "BBands HTF"
-var bb2                 = "BB Toggle"
-var bb3                 = "BBands LTF"
-var vwap                = "----------------- VWAP -----------------"
-var dwmLevels           = "------------- D/W/M Levels -------------"
-var sdZoneGroupTxt      = "--------- Supply/Demand Zones ----------"
-var sdZoneTFSettingTxt  = "-------- S/D Zone TF Settings ----------" 
-var groupEma            = "------------- 20/50/200 EMA ------------"
-var groupBb             = "------ BBands - 2 Std. Deviation -------"
-var groupVwap           = "------- Auto Anchored D/W/M VWAP -------"
-var groupSD             = "------------- Supply/Demand ------------"
-var groupSDSettings     = "-------- Supply/Demand Settings --------"
-var ttBb                = "Shows BBands on LTF"
-var groupDwmLevels      = "------------- D/W/M Levels -------------"
-var groupCog            = "---------- +/- COG Alerts --------------"
-var groupAPlusPanel     = "-------------- A+ Panel  ---------------"
-// ---- tooltips
+displaySet          = display.all - display.price_scale - display.status_line
+ema                 = "----------------- EMA ------------------"
+bb1                 = "BBands HTF"
+bb2                 = "BB Toggle"
+bb3                 = "BBands LTF"
+vwap                = "----------------- VWAP -----------------"
+dwmLevels           = "------------- D/W/M Levels -------------"
+sdZoneGroupTxt      = "--------- Supply/Demand Zones ----------"
+sdZoneTFSettingTxt  = "-------- S/D Zone TF Settings ----------" 
+groupEma            = "------------- 20/50/200 EMA ------------"
+groupBb             = "------ BBands - 2 Std. Deviation -------"
+groupVwap           = "------- Auto Anchored D/W/M VWAP -------"
+groupSD             = "------------- Supply/Demand ------------"
+groupSDSettings     = "-------- Supply/Demand Settings --------"
+ttBb                = "Shows BBands on LTF"
+groupDwmLevels      = "------------- D/W/M Levels -------------"
+groupCog            = "---------- +/- COG Alerts --------------"
+groupAPlusPanel     = "-------------- A+ Panel  ---------------"
 
-// --------------------------------------
-
-
+emaColor1           = color.new(color.aqua, 50)
+emaColor2           = color.new(color.blue, 50)
+emaColor3           = color.new(color.purple, 50)
+dVwapColor          = color.new(color.gray, 60)
+wVwapColor          = color.new(color.yellow, 60)
+mVwapColor          = color.new(color.orange, 60)
+yVwapColor          = color.new(color.purple, 60)
+globexLevelColor    = color.rgb(120, 123, 134, 17)
+dLevelColor         = color.rgb(16, 105, 207, 18)
+wLevelColor         = color.rgb(218, 221, 8, 5)
+mLevelColor         = color.rgb(255, 153, 0, 23)
+bbColor             = color.new(color.gray, 50)
+cogBgColor_pos      = color.new(color.green, 90)
+cogBgColor_neg      = color.new(color.red, 90)
 
 // GLOBALS /  CALCS ----------------------------
 Offset(X)=>
@@ -53,100 +46,99 @@ Offset(X)=>
     time + Bar * (1 + X * 1)
 f_get_changePercentage(_p1, _p2) => (_p1 - _p2) * 100 / _p2
 
-var tf                  = timeframe.period
-var displayLtf          = timeframe.isintraday and timeframe.multiplier <= 5
-var displayMtf          = timeframe.isintraday and (timeframe.multiplier >= 6 and timeframe.multiplier <= 60)
-var displayHtf          = timeframe.isdwm
-var displayVwapD        = tf == "D"
-var displayVwapLtf      = displayLtf
-var isFutures           = syminfo.type == 'futures'
-var isForex             = syminfo.type == 'forex'
+tf                  = timeframe.period
+displayLtf          = timeframe.isintraday and timeframe.multiplier <= 5
+displayMtf          = timeframe.isintraday and (timeframe.multiplier >= 6 and timeframe.multiplier <= 60)
+displayHtf          = timeframe.isdwm
+displayVwapD        = tf == "D"
+displayVwapLtf      = displayLtf
+isFutures           = syminfo.type == 'futures'
+isForex             = syminfo.type == 'forex'
 
-var src    = close
-var outLtf = ta.ema(src, 20)
-var outMtf = ta.ema(src, 50)
-var outHtf = ta.ema(src, 200)
-var dev    = 2.0 * ta.stdev(close, 20)
+src    = close
+outLtf = ta.ema(src, 20)
+outMtf = ta.ema(src, 50)
+outHtf = ta.ema(src, 200)
+dev    = 2.0 * ta.stdev(close, 20)
 
-var upperHtf = outLtf + dev
-var lowerHtf = outLtf - dev
-var upperLtf = outLtf + dev
-var lowerLtf = outLtf - dev
+upperHtf = outLtf + dev
+lowerHtf = outLtf - dev
+upperLtf = outLtf + dev
+lowerLtf = outLtf - dev
 
-var shortBbandEntryHtf      = close > upperHtf
-var longBbandEntryHtf       = close < lowerHtf
+shortBbandEntryHtf      = close > upperHtf
+longBbandEntryHtf       = close < lowerHtf
 
-var MILLIS_IN_DAY   = 86400000
-var dwmBarTime      = timeframe.isdwm ? time : time("D")
+MILLIS_IN_DAY   = 86400000
+dwmBarTime      = timeframe.isdwm ? time : time("D")
 
-var globexBlank         = "\n‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏"
-var dBlank              = "\n‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏"
-var wBlank              = "\n‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏"
-var mBlank              = "‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏"
+globexBlank         = "\n‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏"
+dBlank              = "\n‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏"
+wBlank              = "\n‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏"
+mBlank              = "‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏"
 
-[_gT, _gH, _gL]                         = request.security(syminfo.tickerid, "930", [time[1], high[1], low[1]],  barmerge.gaps_off, barmerge.lookahead_on)
+[_gT, _gH, _gL]                         = request.security(syminfo.tickerid, "720", [time[1], high[1], low[1]],  barmerge.gaps_off, barmerge.lookahead_on)
 [_dH, _dL, _dC]                         = request.security(syminfo.tickerid, "D", [high[1], low[1], close[1]],  barmerge.gaps_off, barmerge.lookahead_on)
 [_wH, _wL, _wC]                         = request.security(syminfo.tickerid, "W", [high[1], low[1], close[1]],  barmerge.gaps_off, barmerge.lookahead_on)
 [_mH, _mL, _mC]                         = request.security(syminfo.tickerid, "M", [high[1], low[1], close[1]],  barmerge.gaps_off, barmerge.lookahead_on)
 
-var is20and200Bullish       = outLtf > outHtf     
-var is20and50Bullish        = outLtf > outMtf
-var is20and200Bearish       = not is20and200Bullish
-var is20and50Bearish        = not is20and50Bullish
+is20and200Bullish       = outLtf > outHtf     
+is20and50Bullish        = outLtf > outMtf
+is20and200Bearish       = not is20and200Bullish
+is20and50Bearish        = not is20and50Bullish
 
-var legOutCandleSize    = 2.0
+legOutCandleSize    = 2.0
 
 // INPUTS --------------------------------
 
-var ltfColor = input(defval = emaColor20, title="20 EMA", inline = ema, group = groupEma)
-var mtfColor = input(defval = emaColor50, title="50 EMA", inline = ema, group = groupEma)
-var htfColor = input(defval = emaColor200, title="200 EMA", inline = ema, group = groupEma)
+ltfColor = input(defval = emaColor1, title="20 EMA", inline = ema, group = groupEma)
+mtfColor = input(defval = emaColor2, title="50 EMA", inline = ema, group = groupEma)
+htfColor = input(defval = emaColor3, title="200 EMA", inline = ema, group = groupEma)
 
-var upperHtfColor = input(defval = bbColor, title="Upper HTF Band", inline = bb1, group = groupBb)
-var lowerHtfColor = input(defval = bbColor, title="Lower HTF Band", inline = bb1, group = groupBb)
-var showBbLtf     = input.bool(defval = false, title = "Show BB on LTF", inline = bb2, group = groupBb)
-var upperLtfColor = input(defval = bbColor, title="Upper LTF Band", inline = bb3, group = groupBb)
-var lowerLtfColor = input(defval = bbColor, title="Lower LTF Band", inline = bb3, group = groupBb)
+upperHtfColor = input(defval = bbColor, title="Upper HTF Band", inline = bb1, group = groupBb)
+lowerHtfColor = input(defval = bbColor, title="Lower HTF Band", inline = bb1, group = groupBb)
+showBbLtf     = input.bool(defval = false, title = "Show BB on LTF", inline = bb2, group = groupBb)
+upperLtfColor = input(defval = bbColor, title="Upper LTF Band", inline = bb3, group = groupBb)
+lowerLtfColor = input(defval = bbColor, title="Lower LTF Band", inline = bb3, group = groupBb)
 
-var dvColor = input(defval = dVwapColor, title="D VWAP Color", inline = vwap, group = groupVwap)
-var wvColor = input(defval = wVwapColor, title="W VWAP Color", inline = vwap, group = groupVwap)
-var mvColor = input(defval = mVwapColor, title="M VWAP Color", inline = vwap, group = groupVwap)
-// yvColor = input(defval = yVwapColor, title="Y VWAP Color", inline = vwap, group = groupVwap)
+dvColor = input(defval = dVwapColor, title="D VWAP Color", inline = vwap, group = groupVwap)
+wvColor = input(defval = wVwapColor, title="W VWAP Color", inline = vwap, group = groupVwap)
+mvColor = input(defval = mVwapColor, title="M VWAP Color", inline = vwap, group = groupVwap)
+yvColor = input(defval = yVwapColor, title="Y VWAP Color", inline = vwap, group = groupVwap)
 
-var globex_Line_Color   = input.color(defval = globexLevelColor, title = "Daily Level", inline = dwmLevels, group = groupDwmLevels)
-var d_Line_Color        = input.color(defval = dLevelColor, title = "Daily Level", inline = dwmLevels, group = groupDwmLevels)
-var w_Line_Color        = input.color(defval = wLevelColor, title = "Weekly Level",  inline = dwmLevels, group = groupDwmLevels)
-var m_Line_Color        = input.color(defval = mLevelColor, title = "Monthly Level", inline = dwmLevels, group = groupDwmLevels)
-var showGlobexLevels    = input.bool(defval = true, title = "Show Globex Hi/Lo?", inline = dwmLevels, group = groupDwmLevels)
-var showGlobexLabels    = input.bool(defval = true, title = 'Show Globex Label?', inline = dwmLevels, group = groupDwmLevels)
-var extendLines         = input.bool(defval = false, title = "Extend Levels Across Screen?", inline = dwmLevels, group = groupDwmLevels)
-var showDwmClose        = input.bool(defval = false, title = "Show Close?", inline = dwmLevels)
-var dwmLineWidth        = input.int(defval = 2, title = "Levels Line Width", minval = 1, maxval = 4, step = 1, group = groupDwmLevels)
+globex_Line_Color   = input.color(defval = globexLevelColor, title = "Daily Level", inline = dwmLevels, group = groupDwmLevels)
+d_Line_Color        = input.color(defval = dLevelColor, title = "Daily Level", inline = dwmLevels, group = groupDwmLevels)
+w_Line_Color        = input.color(defval = wLevelColor, title = "Weekly Level",  inline = dwmLevels, group = groupDwmLevels)
+m_Line_Color        = input.color(defval = mLevelColor, title = "Monthly Level", inline = dwmLevels, group = groupDwmLevels)
+showGlobexLevels    = input.bool(defval = true, title = "Show Globex Hi/Lo?", inline = dwmLevels, group = groupDwmLevels)
+extendLines         = input.bool(defval = false, title = "Extend Levels Across Screen?", inline = dwmLevels, group = groupDwmLevels)
+showDwmClose        = input.bool(defval = false, title = "Show Close?", inline = dwmLevels)
+dwmLineWidth        = input.int(defval = 2, title = "Levels Line Width", minval = 1, maxval = 4, step = 1, group = groupDwmLevels)
 
-var showHTFsdZones   = input.bool(true, title = "Show HTF Supply/Demand Zones?", inline = sdZoneGroupTxt, group = groupSD)
-var showLTFsdZones   = input.bool(true, title = "Show LTF Supply/Demand Zones?", inline = sdZoneGroupTxt, group = groupSD)
-var sdColorLTF       = input.color(defval = #e7c6fd7a, title = 'LTF S/D Color', inline = "LTF Color", group = groupSD)
-var sdBorderColorLTF = input.color(defval = #e7c6fd7a, title = 'LTF S/D Border Color', inline = "LTF Color", group = groupSD)
-var sdColorD         = input.color(defval = #00a2ff1a, title = 'D S/D Color', inline = "D Color", group = groupSD)
-var sdBorderColorD   = input.color(defval = #00a2ff1a, title = 'D S/D Border Color', inline = "D Color", group = groupSD)
-var sdColorW         = input.color(defval = #fcf7001a, title = 'W S/D Color', inline = "W Color", group = groupSD)
-var sdBorderColorW   = input.color(defval = #fcf7001a, title = 'W S/D Border Color', inline = "W Color", group = groupSD)
-var sdColorM         = input.color(defval = #fc87011a, title = 'M S/D Color', inline = "M Color", group = groupSD)
-var sdBorderColorM   = input.color(defval = #fc87011a, title = 'M S/D Border Color', inline = "M Color", group = groupSD)
+showHTFsdZones   = input.bool(true, title = "Show HTF Supply/Demand Zones?", inline = sdZoneGroupTxt, group = groupSD)
+showLTFsdZones   = input.bool(true, title = "Show LTF Supply/Demand Zones?", inline = sdZoneGroupTxt, group = groupSD)
+sdColorLTF       = input.color(defval = #e7c6fd7a, title = 'LTF S/D Color', inline = "LTF Color", group = groupSD)
+sdBorderColorLTF = input.color(defval = #e7c6fd7a, title = 'LTF S/D Border Color', inline = "LTF Color", group = groupSD)
+sdColorD         = input.color(defval = #00a2ff1a, title = 'D S/D Color', inline = "D Color", group = groupSD)
+sdBorderColorD   = input.color(defval = #00a2ff1a, title = 'D S/D Border Color', inline = "D Color", group = groupSD)
+sdColorW         = input.color(defval = #fcf7001a, title = 'W S/D Color', inline = "W Color", group = groupSD)
+sdBorderColorW   = input.color(defval = #fcf7001a, title = 'W S/D Border Color', inline = "W Color", group = groupSD)
+sdColorM         = input.color(defval = #fc87011a, title = 'M S/D Color', inline = "M Color", group = groupSD)
+sdBorderColorM   = input.color(defval = #fc87011a, title = 'M S/D Border Color', inline = "M Color", group = groupSD)
 
-var sdOffset        = input.int(defval = 2, minval = 0, maxval = 30, title="Extend Zones", group = groupSDSettings, tooltip = 'Extends Zone X number of bars past current price')
-var showZoneText    = input(true, title = "Show Zone Text", inline = "ZoneTxt", group = groupSDSettings)
-var sdZoneTextColor = input.color(defval = color.rgb(0, 0, 0), title = 'S/D Zone Text Color', group = groupSDSettings)
-var sdTextAlignV    = input.string("Top", title="Text Align (Vertical)", options=["Top", "Center", "Bottom"], group = groupSDSettings)
-var show2mZones     = input.bool(false, title="Show 2m", inline = "LTF", group = groupSDSettings)
-var show5mZones     = input.bool(false, title="Show 5m", inline = "LTF", group = groupSDSettings)
-var show15mZones    = input.bool(false, title="Show 15m", inline = "LTF", group = groupSDSettings)
-var show30mZones    = input.bool(false, title="Show 30m", inline = "ITF", group = groupSDSettings)
-var show60mZones    = input.bool(true, title="Show 60m", inline = "ITF", group = groupSDSettings)
-var show4hZones     = input.bool(false, title="Show 4h", inline = "ITF", group = groupSDSettings)
-var showDZones      = input.bool(true, title="Show D", inline = "HTF", group = groupSDSettings)
-var showWZones      = input.bool(true, title="Show W", inline = "HTF", group = groupSDSettings)
-var showMZones      = input.bool(true, title="Show M", inline = "HTF", group = groupSDSettings)
+sdOffset        = input.int(defval = 2, minval = 0, maxval = 30, title="Extend Zones", group = groupSDSettings, tooltip = 'Extends Zone X number of bars past current price')
+showZoneText    = input(true, title = "Show Zone Text", inline = "ZoneTxt", group = groupSDSettings)
+sdZoneTextColor = input.color(defval = color.rgb(0, 0, 0), title = 'S/D Zone Text Color', group = groupSDSettings)
+sdTextAlignV    = input.string("Top", title="Text Align (Vertical)", options=["Top", "Center", "Bottom"], group = groupSDSettings)
+show2mZones     = input.bool(false, title="Show 2m", inline = "LTF", group = groupSDSettings)
+show5mZones     = input.bool(false, title="Show 5m", inline = "LTF", group = groupSDSettings)
+show15mZones    = input.bool(false, title="Show 15m", inline = "LTF", group = groupSDSettings)
+show30mZones    = input.bool(false, title="Show 30m", inline = "ITF", group = groupSDSettings)
+show60mZones    = input.bool(false, title="Show 60m", inline = "ITF", group = groupSDSettings)
+show4hZones     = input.bool(false, title="Show 4h", inline = "ITF", group = groupSDSettings)
+showDZones      = input.bool(true, title="Show D", inline = "HTF", group = groupSDSettings)
+showWZones      = input.bool(true, title="Show W", inline = "HTF", group = groupSDSettings)
+showMZones      = input.bool(true, title="Show M", inline = "HTF", group = groupSDSettings)
 
 if sdTextAlignV == 'Bottom'
     sdTextAlignV := text.align_bottom
@@ -155,10 +147,10 @@ if sdTextAlignV == 'Center'
 if sdTextAlignV == 'Top'
     sdTextAlignV := text.align_top
 
-var showCogs      = input.bool(true, title="Show Recent Cogs", inline = "Cogs", group = groupCog)
-// showAllCogs     = input.bool(false, title="Show All Cogs", inline = "Cogs", group = groupCog)
+showCogs      = input.bool(true, title="Show Recent Cogs", inline = "Cogs", group = groupCog)
+showAllCogs     = input.bool(false, title="Show All Cogs", inline = "Cogs", group = groupCog)
 
-var showAPlusPanel  = input.bool(false, title="Show A+ Setup Helper", inline = "Panel", group = groupAPlusPanel)
+showAPlusPanel  = input.bool(false, title="Show A+ Setup Helper", inline = "Panel", group = groupAPlusPanel)
 
 // EMAs -----------------------------
 plot(outLtf, title="EMA-20", color = ltfColor, offset = 0, linewidth = 2, display = displaySet)
@@ -181,6 +173,17 @@ var periodStartM = time - time // zero
 var periodStartY = time - time // zero
 
 makeMondayZero(dayOfWeek) => (dayOfWeek + 5) % 7
+
+isMidnight(t) =>
+    hour(t) == 0 and minute(t) == 0
+
+isSameDay(t1, t2) =>
+    dayofmonth(t1) == dayofmonth(t2) and
+  month(t1) == month(t2) and
+  year(t1) == year(t2)
+
+//  isGlobex() =>
+//      not (request.security(syminfo.tickerid, "D", isSameDay(time, time_close), barmerge.gaps_on, barmerge.lookahead_on))
 
 tradingDayStart(t) =>
     y = year(t)
@@ -227,12 +230,12 @@ isNewMPeriod() =>
             
     isNew
 
-// isNewYPeriod() =>
-//     isNew = false
-//     if tradingDay != nz(tradingDay[1])
-//         isNew := year(periodStartY) != year(tradingDay) or year(periodStartY) != year(tradingDay)
+isNewYPeriod() =>
+    isNew = false
+    if tradingDay != nz(tradingDay[1])
+        isNew := year(periodStartY) != year(tradingDay) or year(periodStartY) != year(tradingDay)
             
-//     isNew
+    isNew
 
 sumSrcD = float(na)
 sumVolD = float(na)
@@ -269,45 +272,43 @@ if isNewMPeriod()
     sumSrcM := 0.0
     sumVolM := 0.0
 
-// if isNewYPeriod()
-//     periodStartY := tradingDay
-//     sumSrcY := 0.0
-//     sumVolY := 0.0    
+if isNewYPeriod()
+    periodStartY := tradingDay
+    sumSrcY := 0.0
+    sumVolY := 0.0    
 
 if not na(hlc3) and not na(volume)
     sumSrcD := sumSrcD + hlc3 * volume
     sumVolD := sumVolD + volume
+
+if not na(hlc3) and not na(volume)
     sumSrcW := sumSrcW + hlc3 * volume
     sumVolW := sumVolW + volume
+
+if not na(hlc3) and not na(volume)
     sumSrcM := sumSrcM + hlc3 * volume
     sumVolM := sumVolM + volume
-    // sumSrcY := sumSrcY + hlc3 * volume
-    // sumVolY := sumVolY + volume
+
+if not na(hlc3) and not na(volume)
+    sumSrcY := sumSrcY + hlc3 * volume
+    sumVolY := sumVolY + volume    
 
 dVwapValue = sumSrcD / sumVolD
 wVwapValue = sumSrcW / sumVolW
 mVwapValue = sumSrcM / sumVolM
-// yVwapValue = sumSrcY / sumVolY
-
+yVwapValue = sumSrcY / sumVolY
 plot(not isForex ? dVwapValue : na, title="D VWAP", style = plot.style_circles, color=dvColor, linewidth = 2, display = displaySet)
 plot(not isForex ? wVwapValue : na, title="W VWAP", style = plot.style_circles, color=wvColor, linewidth = 2, display = displaySet)
 plot(not isForex ? mVwapValue : na, title="M VWAP", style = plot.style_circles, color=mvColor, display = displaySet)
-// plot(not isForex ? yVwapValue : na, title="Y VWAP", style = plot.style_circles, color=yvColor, display = displaySet)
+plot(not isForex ? yVwapValue : na, title="Y VWAP", style = plot.style_circles, color=yvColor, display = displaySet)
 
-// // DWM / Globex PRICE LEVELS --------------------------
-gHi_text='G Hi | ' + str.tostring(_gH, '0.00')
-gLo_text='G Lo | ' + str.tostring(_gL, '0.00')
-if timeframe.isintraday and syminfo.type == 'futures'
-    if showGlobexLevels
-        LINE_HI     = line.new(Offset(10), _gH, _gT, _gH, width = dwmLineWidth, color = globexLevelColor, style = line.style_dotted, extend = extend.none, xloc = xloc.bar_time)
-        LINE_LO     = line.new(Offset(10), _gL, _gT, _gL, width = dwmLineWidth, color = globexLevelColor, style = line.style_dotted, extend = extend.none, xloc = xloc.bar_time)
-        line.delete(LINE_HI[1])
-        line.delete(LINE_LO[1])
-    if showGlobexLevels and showGlobexLabels
-        LABEL_HI    = label.new(Offset(10), _gH, gHi_text, textcolor=color.rgb(3, 77, 110), color = globexLevelColor, style = label.style_label_left, size = size.small, xloc = xloc.bar_time)
-        LABEL_LO    = label.new(Offset(10), _gL, gLo_text, textcolor=color.rgb(3, 77, 110), color = globexLevelColor, style = label.style_label_left, size = size.small, xloc = xloc.bar_time)
-        label.delete(LABEL_HI[1])
-        label.delete(LABEL_LO[1])
+// DWM / Globex PRICE LEVELS --------------------------
+// show gLvlv? Update plot start for globex level and ray to right. replace 'time' with start time of new hi/lo
+// if syminfo.type == 'futures' and showGlobexLevels
+//     globex_High_Line     = line.new(Offset(10), _gH, _gT, _gH, xloc = xloc.bar_time, extend = extend.right, color = globex_Line_Color, style = line.style_solid, width = dwmLineWidth)
+//     line.delete(globex_High_Line[1])
+//     globex_Low_Line      = line.new(Offset(10), _gL, _gT, _gL, xloc = xloc.bar_time, extend = extend.right, color = globex_Line_Color, style = line.style_solid, width = dwmLineWidth)
+//     line.delete(globex_Low_Line[1])
 
 daily_High_Line     = line.new(time, _dH, time + 1, _dH, xloc = xloc.bar_time, extend = extendLines ? extend.both : extend.right, color = d_Line_Color, style = line.style_dotted, width = dwmLineWidth)
 line.delete(daily_High_Line[1])
@@ -390,6 +391,7 @@ drawDemandZone(formattedTf, ctd_ht, top_ht, ctd, bot_ht, box_color, border_color
         box.set_text_valign(demand, sdTextAlignV)
     array.push(demand_HT, demand)
 
+// drawZone(formattedTf, left_ctd_ht, top_ht, ctd_ht, bot_ht, box_color, border_color) =>
 
 
 createZones(timeframe) => 
