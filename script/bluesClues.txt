@@ -37,8 +37,11 @@ dLevelColor         = color.rgb(16, 105, 207, 18)
 wLevelColor         = color.rgb(218, 221, 8, 5)
 mLevelColor         = color.rgb(255, 153, 0, 23)
 bbColor             = color.new(color.gray, 50)
-cogBgColor_pos      = color.new(color.green, 90)
-cogBgColor_neg      = color.new(color.red, 90)
+cog_bg_color_pos    = color.new(color.green, 90)
+cog_bg_color_neg    = color.new(color.red, 90)
+cog_lbl_color_pos   = color.new(color.green, 90)
+cog_lbl_color_neg   = color.new(color.red, 90)
+cog_lbl_text_color  = color.new(color.black, 0)
 
 // GLOBALS /  CALCS ----------------------------
 Offset(X)=>
@@ -113,6 +116,8 @@ showHTFsdZones   = input.bool(true, title = "Show HTF Supply/Demand Zones?", inl
 showLTFsdZones   = input.bool(true, title = "Show LTF Supply/Demand Zones?", inline = sdZoneGroupTxt, group = groupSD)
 sdColorLTF       = input.color(defval = #e7c6fd7a, title = 'LTF S/D Color', inline = "LTF Color", group = groupSD)
 sdBorderColorLTF = input.color(defval = #e7c6fd7a, title = 'LTF S/D Border Color', inline = "LTF Color", group = groupSD)
+sdColorITF       = input.color(defval = #fdc6ef7a, title = 'ITF S/D Color', inline = "ITF Color", group = groupSD)
+sdBorderColorITF = input.color(defval = #fdc6ef7a, title = 'ITF S/D Border Color', inline = "ITF Color", group = groupSD)
 sdColorD         = input.color(defval = #00a2ff1a, title = 'D S/D Color', inline = "D Color", group = groupSD)
 sdBorderColorD   = input.color(defval = #00a2ff1a, title = 'D S/D Border Color', inline = "D Color", group = groupSD)
 sdColorW         = input.color(defval = #fcf7001a, title = 'W S/D Color', inline = "W Color", group = groupSD)
@@ -141,7 +146,10 @@ if sdTextAlignV == 'Center'
 if sdTextAlignV == 'Top'
     sdTextAlignV := text.align_top
 
-showCogs      = input.bool(true, title="Show Recent Cogs", inline = "Cogs", group = groupCog)
+cog_color_pos   = input.color(defval = cog_lbl_color_pos, title="+COG Label Color", inline = "CogColor", group = groupCog)
+cog_color_neg   = input.color(defval = cog_lbl_color_neg, title="-COG Label Color", inline = "CogColor", group = groupCog)
+cog_txt_color   = input.color(defval = cog_lbl_text_color, title="COG Label Text Color", inline = "CogColor", group = groupCog)
+showCogs        = input.bool(true, title="Show Recent Cogs", inline = "Cogs", group = groupCog)
 showAllCogs     = input.bool(false, title="Show All Cogs", inline = "Cogs", group = groupCog)
 
 showAPlusPanel  = input.bool(false, title="Show A+ Setup Helper", inline = "Panel", group = groupAPlusPanel)
@@ -369,14 +377,24 @@ createZones(timeframe) =>
         formatTf := '5m'
     else if timeframe == '15'
         formatTf := '15m'
+        bgColorForBox := sdColorITF
+        borderColorForBox := sdBorderColorITF
     else if timeframe == '30'
         formatTf := '30m'
+        bgColorForBox := sdColorITF
+        borderColorForBox := sdBorderColorITF
     else if timeframe == '45'
         formatTf := '45m'
+        bgColorForBox := sdColorITF
+        borderColorForBox := sdBorderColorITF
     else if timeframe == '60'
         formatTf := '1h'
+        bgColorForBox := sdColorITF
+        borderColorForBox := sdBorderColorITF
     else if timeframe == '240'
         formatTf := '4h'
+        bgColorForBox := sdColorITF
+        borderColorForBox := sdBorderColorITF
     else if timeframe == 'D'
         formatTf := 'D'
         bgColorForBox := sdColorD
@@ -477,13 +495,17 @@ candle_pos_cog      = showCogs and (close >= ema20 and close >= dVwapValue) and 
 candle_neg_cog      = showCogs and (close <= ema20 and close <= dVwapValue) and not is_basing_candle and ((candle_green[1] or is_doji[1]) and candle_red) and (candle_body_hi > candle_body_lo and (candle_body_lo < open[1] or candle_body_lo < candle_lo[1]))
 
 if candle_pos_cog
-    draw_pos_cog        = label.new(bar_index, high, xloc = xloc.bar_index, yloc = yloc.abovebar, text = "+ COG", textcolor = color.black, color = color.new(color.green, 90))
+    draw_pos_cog        = label.new(bar_index, high, xloc = xloc.bar_index, yloc = yloc.abovebar, text = "+COG", textcolor = cog_lbl_text_color, color = cog_lbl_color_pos)
+    alert("+ COG Made on " + str.tostring(syminfo.ticker), freq = alert.freq_once_per_bar)
     label.delete(draw_pos_cog[1])
 if candle_neg_cog
-    draw_neg_cog        = label.new(bar_index, high, xloc = xloc.bar_index, yloc = yloc.abovebar, text = "- COG", textcolor = color.black, color = color.new(color.red, 90))
+    draw_neg_cog        = label.new(bar_index, high, xloc = xloc.bar_index, yloc = yloc.abovebar, text = "-COG", textcolor = cog_lbl_text_color, color = cog_lbl_color_neg)
+    alert("- COG Made on " + str.tostring(syminfo.ticker), freq = alert.freq_once_per_bar)
     label.delete(draw_neg_cog[1])  
 
 // for showing all cogs
-bgcolor(showAllCogs ? (ta.highest(candle_pos_cog ? 1 : 0, 1) != 0 ? cogBgColor_pos : na) : na, offset=0)
-bgcolor(showAllCogs ? (ta.highest(candle_neg_cog ? 1 : 0, 1) != 0 ? cogBgColor_neg : na) : na, offset=0)
+bgcolor(showAllCogs ? (ta.highest(candle_pos_cog ? 1 : 0, 1) != 0 ? cog_bg_color_pos : na) : na, offset=0)
+bgcolor(showAllCogs ? (ta.highest(candle_neg_cog ? 1 : 0, 1) != 0 ? cog_bg_color_neg : na) : na, offset=0)
+
+alertcondition(candle_pos_cog or candle_neg_cog, title = "COG Alert", message = "COG MADE at {{close}} for {{ticker}}")
 // ---------
