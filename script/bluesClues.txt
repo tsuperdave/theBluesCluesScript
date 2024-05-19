@@ -6,8 +6,9 @@
 indicator(title="Blue's Clues", shorttitle="Blue's Clues", overlay=true)
 
 // SETTINGS -----------------------------
-displaySet          = display.all - display.price_scale - display.status_line
-ema                 = "----------------- EMA ------------------"
+// text, info etc...
+display_set          = display.all - display.price_scale - display.status_line
+ema_text            = "----------------- EMA ------------------"
 bb1                 = "BBands HTF"
 bb2                 = "BB Toggle"
 bb3                 = "BBands LTF"
@@ -24,7 +25,7 @@ ttBb                = "Shows BBands on LTF"
 groupDwmLevels      = "------------- D/W/M Levels -------------"
 groupCog            = "---------- +/- COG Alerts --------------"
 groupAPlusPanel     = "-------------- A+ Panel  ---------------"
-
+// colors
 emaColor1           = color.new(color.aqua, 50)
 emaColor2           = color.new(color.blue, 50)
 emaColor3           = color.new(color.purple, 50)
@@ -54,16 +55,14 @@ displayVwapLtf      = displayLtf
 isFutures           = syminfo.type == 'futures'
 isForex             = syminfo.type == 'forex'
 
-src    = close
-outLtf = ta.ema(src, 20)
-outMtf = ta.ema(src, 50)
-outHtf = ta.ema(src, 200)
-dev    = 2.0 * ta.stdev(close, 20)
+src     = close
+ema20   = ta.ema(src, 20)
+ema50   = ta.ema(src, 50)
+ema200  = ta.ema(src, 200)
+dev     = 2.0 * ta.stdev(close, 20)
 
-upperHtf = outLtf + dev
-lowerHtf = outLtf - dev
-upperLtf = outLtf + dev
-lowerLtf = outLtf - dev
+upperHtf = ema20 + dev
+lowerHtf = ema20 - dev
 
 shortBbandEntryHtf      = close > upperHtf
 longBbandEntryHtf       = close < lowerHtf
@@ -81,8 +80,8 @@ mBlank              = "‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏
 [_wH, _wL, _wC]                         = request.security(syminfo.tickerid, "W", [high[1], low[1], close[1]],  barmerge.gaps_off, barmerge.lookahead_on)
 [_mH, _mL, _mC]                         = request.security(syminfo.tickerid, "M", [high[1], low[1], close[1]],  barmerge.gaps_off, barmerge.lookahead_on)
 
-is20and200Bullish       = outLtf > outHtf     
-is20and50Bullish        = outLtf > outMtf
+is20and200Bullish       = ema20 > ema200     
+is20and50Bullish        = ema20 > ema50
 is20and200Bearish       = not is20and200Bullish
 is20and50Bearish        = not is20and50Bullish
 
@@ -90,15 +89,12 @@ legOutCandleSize    = 2.0
 
 // INPUTS --------------------------------
 
-ltfColor = input(defval = emaColor1, title="20 EMA", inline = ema, group = groupEma)
-mtfColor = input(defval = emaColor2, title="50 EMA", inline = ema, group = groupEma)
-htfColor = input(defval = emaColor3, title="200 EMA", inline = ema, group = groupEma)
+ltfColor = input(defval = emaColor1, title="20 EMA", inline = ema_text, group = groupEma)
+mtfColor = input(defval = emaColor2, title="50 EMA", inline = ema_text, group = groupEma)
+htfColor = input(defval = emaColor3, title="200 EMA", inline = ema_text, group = groupEma)
 
 upperHtfColor = input(defval = bbColor, title="Upper HTF Band", inline = bb1, group = groupBb)
 lowerHtfColor = input(defval = bbColor, title="Lower HTF Band", inline = bb1, group = groupBb)
-showBbLtf     = input.bool(defval = false, title = "Show BB on LTF", inline = bb2, group = groupBb)
-upperLtfColor = input(defval = bbColor, title="Upper LTF Band", inline = bb3, group = groupBb)
-lowerLtfColor = input(defval = bbColor, title="Lower LTF Band", inline = bb3, group = groupBb)
 
 dvColor = input(defval = dVwapColor, title="D VWAP Color", inline = vwap, group = groupVwap)
 wvColor = input(defval = wVwapColor, title="W VWAP Color", inline = vwap, group = groupVwap)
@@ -151,15 +147,13 @@ showAllCogs     = input.bool(false, title="Show All Cogs", inline = "Cogs", grou
 showAPlusPanel  = input.bool(false, title="Show A+ Setup Helper", inline = "Panel", group = groupAPlusPanel)
 
 // EMAs -----------------------------
-plot(outLtf, title="EMA-20", color = ltfColor, offset = 0, linewidth = 2, display = displaySet)
-plot(displayMtf ? outMtf : na, title="EMA-50", color = mtfColor, offset = 0, linewidth = 2, display = displaySet)
-plot(displayHtf or displayLtf ? outHtf : na, title="EMA-200", color = htfColor, offset = 0, linewidth = 2, display = displaySet)
+plot(ema20, title="EMA-20", color = ltfColor, offset = 0, linewidth = 2, display = display_set)
+plot(displayMtf ? ema50 : na, title="EMA-50", color = mtfColor, offset = 0, linewidth = 2, display = display_set)
+plot(displayHtf or displayLtf ? ema200 : na, title="EMA-200", color = htfColor, offset = 0, linewidth = 2, display = display_set)
 
 // B BANDS --------------------------
-p1Htf = plot(displayHtf ? upperHtf : na, "HTF Upper BBand", color = upperHtfColor, display = displaySet)
-p2Htf = plot(displayHtf ? lowerHtf : na, "HTF Lower BBand", color = lowerHtfColor, display = displaySet)
-p1Ltf = plot(displayVwapLtf and showBbLtf ? upperLtf : na, "LTF Upper Band", color = upperLtfColor, display = displaySet)
-p2Ltf = plot(displayVwapLtf and showBbLtf ? lowerLtf : na, "LTF Lower Band", color = lowerLtfColor, display = displaySet)
+p1Htf = plot(displayHtf ? upperHtf : na, "HTF Upper BBand", color = upperHtfColor, display = display_set)
+p2Htf = plot(displayHtf ? lowerHtf : na, "HTF Lower BBand", color = lowerHtfColor, display = display_set)
 
 // VWAP ---------------------------------
 // If it's a short day, then there could be no daily bar. Take a previous one.
@@ -274,9 +268,9 @@ if not na(hlc3) and not na(volume)
 dVwapValue = sumSrcD / sumVolD
 wVwapValue = sumSrcW / sumVolW
 mVwapValue = sumSrcM / sumVolM
-plot(not isForex ? dVwapValue : na, title="D VWAP", style = plot.style_circles, color=dvColor, linewidth = 2, display = displaySet)
-plot(not isForex ? wVwapValue : na, title="W VWAP", style = plot.style_circles, color=wvColor, linewidth = 2, display = displaySet)
-plot(not isForex ? mVwapValue : na, title="M VWAP", style = plot.style_circles, color=mvColor, display = displaySet)
+plot(not isForex ? dVwapValue : na, title="D VWAP", style = plot.style_circles, color=dvColor, linewidth = 2, display = display_set)
+plot(not isForex ? wVwapValue : na, title="W VWAP", style = plot.style_circles, color=wvColor, linewidth = 2, display = display_set)
+plot(not isForex ? mVwapValue : na, title="M VWAP", style = plot.style_circles, color=mvColor, display = display_set)
 
 // DWM / Globex PRICE LEVELS --------------------------
 gHi_text='G Hi | ' + str.tostring(_gH, '0.00')
@@ -465,30 +459,31 @@ while i2 < array.size(demand_HT) and array.size(demand_HT) > 0
         int(na)
 
 // COG Finder --------------------------------
-C_ShadowPercent = 5.0 // size of shadows
-C_ShadowEqualsPercent = 100.0
-C_DojiBodyPercent = 5.0
+candle_hi           = math.max(high, low)
+candle_body_hi      = math.max(close, open)
+candle_lo           = math.min(high, low)
+candle_body_lo      = math.min(close, open)
+candle_body         = candle_body_hi - candle_body_lo
+candle_basing       = (candle_body * 100)/(candle_hi - candle_lo)
+is_basing_candle    = math.abs(candle_basing) < 50
+is_doji             = candle_body_hi == candle_body_lo
 
-C_BodyHi = math.max(close, open)
-C_BodyLo = math.min(close, open)
-C_Body = C_BodyHi - C_BodyLo
-C_BodyAvg = ta.ema(C_Body, 20)
-C_SmallBody = C_Body < C_BodyAvg
-C_LongBody = C_Body > C_BodyAvg
-C_UpShadow = high - C_BodyHi
-C_DnShadow = C_BodyLo - low
-C_HasUpShadow = C_UpShadow > C_ShadowPercent / 100 * C_Body
-C_HasDnShadow = C_DnShadow > C_ShadowPercent / 100 * C_Body
-C_WhiteBody = open < close
-C_BlackBody = open > close
-C_Range = high-low
-C_IsInsideBar = C_BodyHi[1] > C_BodyHi and C_BodyLo[1] < C_BodyLo
-C_BodyMiddle = C_Body / 2 + C_BodyLo
-C_ShadowEquals = C_UpShadow == C_DnShadow or (math.abs(C_UpShadow - C_DnShadow) / C_DnShadow * 100) < C_ShadowEqualsPercent and (math.abs(C_DnShadow - C_UpShadow) / C_UpShadow * 100) < C_ShadowEqualsPercent
-C_IsDojiBody = C_Range > 0 and C_Body <= C_Range * C_DojiBodyPercent / 100
-C_Doji = C_IsDojiBody and C_ShadowEquals
+candle_green        = open < close
+candle_red          = open > close
+candle_range        = high - low
+candle_inside_bar   = candle_hi[1] > candle_hi and candle_lo[1] < candle_lo
 
-C_EngulfingBearish = showCogs and C_BlackBody and C_LongBody and C_WhiteBody[1] and C_SmallBody[1] and close <= open[1] and open >= close[1] and ( close < open[1] or open > close[1]) and (close <= outLtf) and (close <= dVwapValue)
-C_EngulfingBullish = showCogs and C_WhiteBody and C_LongBody and C_BlackBody[1] and C_SmallBody[1] and close >= open[1] and open <= close[1] and ( close > open[1] or open < close[1])  and (close >= outLtf) and (close >= dVwapValue)
-bgcolor(ta.highest(C_EngulfingBearish?1:0, 1)!=0 ? cogBgColor_neg : na, offset=0)
-bgcolor(ta.highest(C_EngulfingBullish?1:0, 1)!=0 ? cogBgColor_pos : na, offset=0)
+candle_pos_cog      = showCogs and (close >= ema20 and close >= dVwapValue) and not is_basing_candle and ((candle_red[1] or is_doji[1]) and candle_green) and (candle_body_hi > candle_body_lo and (candle_body_hi > open[1] or candle_body_hi > candle_hi[1]))
+candle_neg_cog      = showCogs and (close <= ema20 and close <= dVwapValue) and not is_basing_candle and ((candle_green[1] or is_doji[1]) and candle_red) and (candle_body_hi > candle_body_lo and (candle_body_lo < open[1] or candle_body_lo < candle_lo[1]))
+
+if candle_pos_cog
+    draw_pos_cog        = label.new(bar_index, high, xloc = xloc.bar_index, yloc = yloc.abovebar, text = "+ COG", textcolor = color.black, color = color.new(color.green, 90))
+    label.delete(draw_pos_cog[1])
+if candle_neg_cog
+    draw_neg_cog        = label.new(bar_index, high, xloc = xloc.bar_index, yloc = yloc.abovebar, text = "- COG", textcolor = color.black, color = color.new(color.red, 90))
+    label.delete(draw_neg_cog[1])  
+
+// for showing all cogs
+bgcolor(showAllCogs ? (ta.highest(candle_pos_cog ? 1 : 0, 1) != 0 ? cogBgColor_pos : na) : na, offset=0)
+bgcolor(showAllCogs ? (ta.highest(candle_neg_cog ? 1 : 0, 1) != 0 ? cogBgColor_neg : na) : na, offset=0)
+// ---------
