@@ -16,7 +16,7 @@ UPCOMING:
 
 ~~COG Finder.~~      
 Auto Anchored Fade VWAPS?  
-Auto Globex High/Low for previous session.  
+~~Auto Globex High/Low for previous session.~~  
 Toggle historical VWAPS.  
 A+ Trade finder (will post details on system once testing phase).  
     
