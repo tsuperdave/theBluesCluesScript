@@ -60,7 +60,6 @@ isFutures           = syminfo.type == 'futures'
 isForex             = syminfo.type == 'forex'
 
 src     = close
-ema5    = ta.ema(src, 5)
 ema20   = ta.ema(src, 20)
 ema50   = ta.ema(src, 50)
 ema200  = ta.ema(src, 200)
@@ -85,11 +84,9 @@ mBlank              = "‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏
 [_wH, _wL, _wC]                         = request.security(syminfo.tickerid, "W", [high[1], low[1], close[1]],  barmerge.gaps_off, barmerge.lookahead_on)
 [_mH, _mL, _mC]                         = request.security(syminfo.tickerid, "M", [high[1], low[1], close[1]],  barmerge.gaps_off, barmerge.lookahead_on)
 
-is5and20Bullish         = ema5 > ema20
 is20and200Bullish       = ema20 > ema200     
 is20and50Bullish        = ema20 > ema50
 is50and200Bullish       = ema50 > ema200
-is5and20Bearish         = not is5and20Bullish
 is20and200Bearish       = not is20and200Bullish
 is20and50Bearish        = not is20and50Bullish
 is50and200Bearish       = not is50and200Bullish
@@ -562,6 +559,26 @@ font_trans = input.int(defval=20, title='transparency', group='Cell settings', i
 font_size = input.string(defval='normal', title='size', group='Cell settings', inline='Font color', options=['auto', 'tiny', 'small', 'normal', 'large', 'huge'])
 halign = input.string(defval='center', title='Horizontal alignment', group='Cell settings', inline='Font align', options=['left', 'center', 'right'])
 
+ema20_2         = request.security(syminfo.tickerid, "2", ta.ema(close, 20))
+// ema50_2         = request.security(syminfo.tickerid, "2", ta.ema(close, 50))
+ema200_2        = request.security(syminfo.tickerid, "2", ta.ema(close, 200))
+ema20_5         = request.security(syminfo.tickerid, "5", ta.ema(close, 20))
+// ema50_5         = request.security(syminfo.tickerid, "5", ta.ema(close, 50))
+ema200_5        = request.security(syminfo.tickerid, "5", ta.ema(close, 200))
+ema20_15        = request.security(syminfo.tickerid, "15", ta.ema(close, 20))
+ema50_15        = request.security(syminfo.tickerid, "15", ta.ema(close, 50))
+ema20_60        = request.security(syminfo.tickerid, "60", ta.ema(close, 20))
+ema50_60        = request.security(syminfo.tickerid, "60", ta.ema(close, 50))
+ema5_d          = request.security(syminfo.tickerid, "D", ta.ema(close, 5))    
+ema20_d         = request.security(syminfo.tickerid, "D", ta.ema(close, 20))
+ema200_d        = request.security(syminfo.tickerid, "D", ta.ema(close, 200))
+ema5_w          = request.security(syminfo.tickerid, "W", ta.ema(close, 5))    
+ema20_w         = request.security(syminfo.tickerid, "W", ta.ema(close, 20))
+ema200_w        = request.security(syminfo.tickerid, "W", ta.ema(close, 200)) 
+ema5_m          = request.security(syminfo.tickerid, "M", ta.ema(close, 5))    
+ema20_m         = request.security(syminfo.tickerid, "M", ta.ema(close, 20))
+ema200_m        = request.security(syminfo.tickerid, "M", ta.ema(close, 200))
+
 // get Price Change values of all time frames 
 f_getPercentageChangeAll(_security) =>
     _LTP = request.security(_security, 'D', close)
@@ -587,14 +604,37 @@ f_strRightOf(_str, _of) =>
     string _return = array.join(_substr, '')
     _return
 
-f_getTrend(_tf) =>
-    _trend_ema5 = request.security(syminfo.tickerid, _tf, ta.ema(close, 5))
-    _trend_ema20 = request.security(syminfo.tickerid, _tf, ta.ema(close, 20))
-    _trend_ema50 = request.security(syminfo.tickerid, _tf, ta.ema(close, 50))
-    _trend_ema200 = request.security(syminfo.tickerid, _tf, ta.ema(close, 200))
-    bool _trend = _tf == "D" or _tf == "W" or _tf == "M" ? ema5 > ema20 and ema20 > ema200 : ema20 > ema50 and ema50 > ema200  
-    _trend
-            
+f_getTrendColor(_tf) =>
+    if _tf == "2" and ema20_2 > ema200_2 
+        color.green
+    else if _tf == "5" and ema20_5 > ema200_5
+        color.green
+    else if _tf == "15" and ema20_15 > ema50_15
+        color.green
+    else if _tf == "60" and ema20_60 > ema50_60
+        color.green 
+    else if _tf == "D" and ema5_d > ema20_d and ema20_d > ema200_d
+        color.green 
+    else if _tf == "W" and ema5_w > ema20_w and ema20_w > ema200_w
+        color.green
+    else if _tf == "M" and ema5_m > ema20_m and ema20_m > ema200_m
+        color.green                     
+    else if _tf == "2" and ema20_2 < ema200_2
+        color.red    
+    else if _tf == "5" and ema20_5 < ema200_5
+        color.red    
+    else if _tf == "15" and ema5_d < ema20_d and ema20_d < ema200_d
+        color.red    
+    else if _tf == "60" and ema5_d < ema20_d and ema20_d < ema200_d
+        color.red 
+    else if _tf == "D" and ema5_d < ema20_d and ema20_d < ema200_d
+        color.red
+    else if _tf == "W" and ema5_d < ema20_d and ema20_d < ema200_d
+        color.red
+    else if _tf == "M" and ema5_d < ema20_d and ema20_d < ema200_d
+        color.red              
+    else
+        color.new(bgcolor_c, bgtrans_c)    
 
 // Fill Header column function
 f_fill_HeaderColumn(_table, _column, _row, _cellText) =>
@@ -610,11 +650,9 @@ f_fill_CellText(_table, _column, _row, _value, _percentage) =>
     _c_color = _value >= 0 ? color.rgb(38, 166, 154) : color.rgb(240, 83, 80)
     _cellText = _percentage ? str.tostring(_value, format.percent) : str.tostring(_value, '##.##')
     table.cell(_table, _column, _row, _cellText, bgcolor=_bgcolor, text_size=font_size, text_color=_c_color)
-// fill cell bg for Trend
-f_fill_CellTrend(_table, _column, _row, _tf) =>
-    _bgcolor = f_getTrend(_tf) ? color.rgb(38, 166, 154) : color.rgb(240, 83, 80)
-    _cellText = ""
-    table.cell(_table, _column, _row, _cellText, bgcolor=_bgcolor)
+
+f_fill_CellTextTrend(_table, _column, _row, _value) =>
+    table.cell(_table, _column, _row, _value, bgcolor=f_getTrendColor(_value), text_size=font_size, text_color=color.white)
 
 // Fill Table Title Row  function
 f_fill_TableHeaderTitleRow(_table, t_row) =>
@@ -645,16 +683,15 @@ f_fill_TableRow(_table, _row, _tickerChange, ticker_one, ticker_three, ticker_fo
     f_fill_CellText(_table, 6, _row, ticker_six, false)
     f_fill_CellText(_table, 7, _row, ticker_seven, false)
 
-// fill table row trend
-f_fill_TableRow_Trend(_table, _row, _tf_1, _tf_2, _tf_3, _tf_4, _tf_5, _tf_6, _tf_7) =>
-    f_fill_CellTrend(_table, 1, _row, _tf_1)
-    f_fill_CellTrend(_table, 2, _row, _tf_2)
-    f_fill_CellTrend(_table, 3, _row, _tf_3)
-    f_fill_CellTrend(_table, 4, _row, _tf_4)
-    f_fill_CellTrend(_table, 5, _row, _tf_5)
-    f_fill_CellTrend(_table, 6, _row, _tf_6)
-    f_fill_CellTrend(_table, 7, _row, _tf_7)
-
+f_fill_TableRowTrend(_table, _row, ticker_one, ticker_two, ticker_three, ticker_four, ticker_five, ticker_six, ticker_seven) =>
+    f_fill_CellTextTrend(_table, 1, _row, ticker_one)
+    f_fill_CellTextTrend(_table, 2, _row, ticker_two)
+    f_fill_CellTextTrend(_table, 3, _row, ticker_three)
+    f_fill_CellTextTrend(_table, 4, _row, ticker_four)
+    f_fill_CellTextTrend(_table, 5, _row, ticker_five)
+    f_fill_CellTextTrend(_table, 6, _row, ticker_six)
+    f_fill_CellTextTrend(_table, 7, _row, ticker_seven)   
+     
 //Table Settings
 Panel_loc = input.string('Top Right', 'Panel Position', options=['Top Right', 'Bottom Right', 'Top Left', 'Bottom Left', 'Middle Right', 'Bottom Center'], group='Table position')
 
@@ -682,14 +719,13 @@ _ticker4 = _Index == 'BankNifty' ? input.symbol('NSE:ICICIBANK', 'BNF Symbol 4',
 // Get Symbol Price changes in multiple timeframes
 
 [_tickerDOW_LTP, _tickerDOW_changePrice, _tickerDOW_pct_D, _tickerDOW_pct_CTF, _tickerDOW_pct_MTF, _tickerDOW_pct_HTF] = f_getPercentageChangeAll(_tickerDOW)
+// [_trend_2m, _trend_5m, _trend_15m, _trend60m, _trend_d, _trend_w, _trend_m] = f_getTrend('2', '5', '15', '60', 'D', 'W', 'M')
 
 if barstate.islast
     f_fill_TableHeaderTitleRow(t, 0)
     f_fill_TableHeaderRow(t, 1, '%', 'VIX', 'DXY', 'ADD', 'VOLD', 'ATR-15m', 'TICK')
     f_fill_TableRow(t, 2, '', _tickerVIX, _tickerDXY, _tickerADD, _tickerVOLD, _tickerATR,_tickerTICK)
-    f_fill_TableHeaderRow(t, 3, '2', '5', '15', '60', 'D', 'W', 'M')
-    f_fill_TableRow_Trend(t, 4, '2', '5', '15', '60', 'D', 'W', 'M')
-
+    f_fill_TableRowTrend(t, 3, '2', '5', '15', '60', 'D', 'W', 'M')
     // f_fill_TableRow(t, 4, ':MGC', _ticker1_LTP, _ticker1_changePrice, _ticker1_pct_D, _ticker1_pct_CTF, _ticker1_pct_MTF, _ticker1_pct_HTF)
     // f_fill_TableRow(t, 5, ':MES', _ticker2_LTP, _ticker2_changePrice, _ticker2_pct_D, _ticker2_pct_CTF, _ticker2_pct_MTF, _ticker2_pct_HTF)
     // f_fill_TableRow(t,5,':INDIA VIX',_tickerINDVIX_LTP,_tickerINDVIX_changePrice,_tickerINDVIX_pct_D,_tickerINDVIX_pct_CTF,_tickerINDVIX_pct_MTF,_tickerINDVIX_pct_HTF)
