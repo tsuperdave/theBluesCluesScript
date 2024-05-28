@@ -27,22 +27,31 @@ groupCog            = "---------- +/- COG Alerts --------------"
 groupAPlusPanel     = "-------------- A+ Panel  ---------------"
 
 // colors
-ema20color           = color.new(color.aqua, 50)
-ema50color           = color.new(color.blue, 50)
-ema200color           = color.new(color.purple, 50)
-dVwapColor          = color.new(color.gray, 60)
-wVwapColor          = color.new(color.yellow, 60)
-mVwapColor          = color.new(color.orange, 60)
-globexLevelColor    = color.rgb(120, 123, 134, 17)
-dLevelColor         = color.rgb(16, 105, 207, 18)
-wLevelColor         = color.rgb(218, 221, 8, 5)
-mLevelColor         = color.rgb(255, 153, 0, 23)
-bbColor             = color.new(color.gray, 50)
-cog_bg_color_pos    = color.new(color.green, 90)
-cog_bg_color_neg    = color.new(color.red, 90)
-cog_lbl_color_pos   = color.new(color.green, 90)
-cog_lbl_color_neg   = color.new(color.red, 90)
-cog_lbl_text_color  = color.new(color.black, 0)
+ema20color                      = color.new(color.aqua, 50)
+ema50color                      = color.new(color.blue, 50)
+ema200color                     = color.new(color.purple, 50)
+dVwapColor                      = color.new(color.gray, 60)
+wVwapColor                      = color.new(color.yellow, 60)
+mVwapColor                      = color.new(color.orange, 60)
+globexLevelColor                = color.rgb(120, 123, 134, 17)
+dLevelColor                     = color.rgb(16, 105, 207, 18)
+wLevelColor                     = color.rgb(218, 221, 8, 5)
+mLevelColor                     = color.rgb(255, 153, 0, 23)
+bbColor                         = color.new(color.gray, 50)
+cog_bg_color_pos                = color.new(color.green, 90)
+cog_bg_color_neg                = color.new(color.red, 90)
+cog_lbl_color_pos               = color.new(color.green, 90)
+cog_lbl_color_neg               = color.new(color.red, 90)
+cog_lbl_text_color              = color.new(color.black, 0)
+panel_color                     = color.new(color.gray, 70)
+panel_cell_bg                   = color.new(color.gray, 10)
+panel_cell_numbers_bg           = color.new(color.black, 20)
+panel_internals_extreme_up      = color.new(color.green, 10)
+panel_internals_elevated        = color.new(color.green, 10)
+panel_internals_flat            = color.white
+panel_internals_dropping        = color.red
+panel_internals_extreme_down    = color.red
+panel_font_color                = color.white
 
 // GLOBALS /  CALCS ----------------------------
 Offset(X)=>
@@ -155,7 +164,11 @@ cog_txt_color   = input.color(defval = cog_lbl_text_color, title="COG Label Text
 showCogs        = input.bool(true, title="Show Recent Cogs", inline = "Cogs", group = groupCog)
 showAllCogs     = input.bool(false, title="Show All Cogs", inline = "Cogs", group = groupCog)
 
-showAPlusPanel  = input.bool(false, title="Show A+ Setup Helper", inline = "Panel", group = groupAPlusPanel)
+showAPlusPanel      = input.bool(true, title="Show A+ Setup Helper", inline = "Panel", group = groupAPlusPanel)
+showMinimalistMode  = input.bool(false, title="Minimalist Mode", inline = "PanelMin", group = groupAPlusPanel)
+panelLocation       = input.string('Bottom Right', 'Panel Position', options=['Top Right', 'Bottom Right', 'Top Left', 'Bottom Left', 'Middle Right', 'Bottom Center'], inline = "PanelLoc", group = groupAPlusPanel)
+panelTransparency   = input.int(defval=20, title='Panel Transparency', group=groupAPlusPanel, inline='PanelTrans', minval=0, maxval=100, step=10) 
+panelTextSize       = input.string(defval='normal', title='Table Text Size', group= groupAPlusPanel, inline='panelTextSize', options=['auto', 'tiny', 'small', 'normal', 'large', 'huge'])            
 
 // EMAs -----------------------------
 plot(ema20, title="EMA-20", color = ltfColor, offset = 0, linewidth = 2, display = display_set)
@@ -510,55 +523,8 @@ bgcolor(showAllCogs ? (ta.highest(candle_neg_cog ? 1 : 0, 1) != 0 ? cog_bg_color
 
 alertcondition(candle_pos_cog or candle_neg_cog, title = "COG Alert", message = "COG MADE at {{close}} for {{ticker}}")
 // ---------
-// CRITERIA
-// 20 > 50
-// 20 > 200
-// 20 > 50
-// D/W/M VWAPS
-// VIX
-// DXY
-// ADD
-// VOLD
-// ATR
-// TICK
 
-//-   Time Frame Settings  //
-CTF         = input.timeframe(title='Current TimeFrame', defval='5', group='TimeFrame Settings')
-MTF         = input.timeframe(title='Mid TimeFrame', defval='15', group='TimeFrame Settings')
-HTF         = input.timeframe(title='Higher TimeFrame', defval='75', group='TimeFrame Settings')
-
-//-   Table colors  //{
-border_color = input.color(defval=color.silver, title='Border color', group=groupAPlusPanel, inline='Border color')
-border_trans = input.int(defval=50, title='transparency', group=groupAPlusPanel, inline='Border color', minval=0, maxval=100, step=10)
-border_width = input.int(defval=1, title='width', group=groupAPlusPanel, inline='Border color', minval=0, maxval=3, step=1)
-frame_color = input.color(defval=color.black, title='Frame color', group=groupAPlusPanel, inline='Frame color')
-frame_trans = input.int(defval=10, title='transparency', group=groupAPlusPanel, inline='Frame color', minval=0, maxval=100, step=10)
-frame_width = input.int(defval=2, title='width', group=groupAPlusPanel, inline='Frame color', minval=0, maxval=5, step=1)
-//} 
-//-   Header column //{ 
-bgcolor_c = input.color(defval=color.gray, title='Head col color', group='Header columns', inline='Column color')
-bgtrans_c = input.int(defval=20, title='transparency', group='Header columns', inline='Column color', minval=0, maxval=100, step=10)
-font_color_c = input.color(defval=color.white, title='Font color', group='Header columns', inline='Column font')
-font_trans_c = input.int(defval=0, title='transparency', group='Header columns', inline='Column font', minval=0, maxval=100, step=10)
-font_size_c = input.string(defval='normal', title='size', group='Header columns', inline='Column font', options=['auto', 'tiny', 'small', 'normal', 'large', 'huge'])
-halign_c = input.string(defval='center', title='Horizontal alignment', group='Header columns', inline='Column align', options=['left', 'center', 'right'])
-//}    
-//-   Header row    //{
-bgcolor_r = input.color(defval=color.black, title='Head row color', group='Header rows', inline='Row color')
-bgtrans_r = input.int(defval=0, title='transparency', group='Header rows', inline='Row color', minval=0, maxval=100, step=10)
-font_color_r = input.color(defval=color.white, title='Font color', group='Header rows', inline='Row font')
-font_trans_r = input.int(defval=0, title='transparency', group='Header rows', inline='Row font', minval=0, maxval=100, step=10)
-font_size_r = input.string(defval='normal', title='size', group='Header rows', inline='Row font', options=['auto', 'tiny', 'small', 'normal', 'large', 'huge'])
-halign_r = input.string(defval='left', title='Horizontal alignment', group='Header rows', inline='Row align', options=['left', 'center', 'right'])
-//} 
-//-   Cells//{ 
-_bgcolor = input.color(defval=color.black, title='Cell color', group='Cell settings', inline='BG color')
-bgtrans = input.int(defval=20, title='transparency', group='Cell settings', inline='BG color', minval=0, maxval=100, step=10)
-font_color = input.color(defval=color.white, title='Font color', group='Cell settings', inline='Font color')
-font_trans = input.int(defval=20, title='transparency', group='Cell settings', inline='Font color', minval=0, maxval=100, step=10)
-font_size = input.string(defval='normal', title='size', group='Cell settings', inline='Font color', options=['auto', 'tiny', 'small', 'normal', 'large', 'huge'])
-halign = input.string(defval='center', title='Horizontal alignment', group='Cell settings', inline='Font align', options=['left', 'center', 'right'])
-
+// --------- A + Panel
 ema20_2         = request.security(syminfo.tickerid, "2", ta.ema(close, 20))
 // ema50_2         = request.security(syminfo.tickerid, "2", ta.ema(close, 50))
 ema200_2        = request.security(syminfo.tickerid, "2", ta.ema(close, 200))
@@ -585,10 +551,10 @@ f_getPercentageChangeAll(_security) =>
     _previousPrice = request.security(_security, 'D', close[1])
     _changePrice = _LTP - _previousPrice
     _pct_D = f_get_changePercentage(_LTP, _previousPrice)
-    _pct_CTF = f_get_changePercentage(_LTP, request.security(_security, CTF, close[1]))
-    _pct_MTF = f_get_changePercentage(_LTP, request.security(_security, MTF, close[1]))
-    _pct_HTF = f_get_changePercentage(_LTP, request.security(_security, HTF, close[1]))
-    [_LTP, _changePrice, _pct_D, _pct_CTF, _pct_MTF, _pct_HTF]
+    // _pct_CTF = f_get_changePercentage(_LTP, request.security(_security, CTF, close[1]))
+    // _pct_MTF = f_get_changePercentage(_LTP, request.security(_security, MTF, close[1]))
+    // _pct_HTF = f_get_changePercentage(_LTP, request.security(_security, HTF, close[1]))
+    [_LTP, _changePrice, _pct_D]
 
 // string seperator
 f_strRightOf(_str, _of) =>
@@ -612,20 +578,20 @@ f_getTrendColor(_tf) =>
     else if _tf == "15" and ema20_15 > ema50_15
         color.green
     else if _tf == "60" and ema20_60 > ema50_60
-        color.green 
-    else if _tf == "D" and ema5_d > ema20_d and ema20_d > ema200_d
-        color.green 
-    else if _tf == "W" and ema5_w > ema20_w and ema20_w > ema200_w
         color.green
-    else if _tf == "M" and ema5_m > ema20_m and ema20_m > ema200_m
-        color.green                     
+    else if _tf == "D" and ema5_d > ema20_d and ema20_d > ema200_d
+        color.green
+    else if _tf == "W" and ema5_d > ema20_d and ema20_d > ema200_d
+        color.green
+    else if _tf == "M" and ema5_d > ema20_d and ema20_d > ema200_d
+        color.green             
     else if _tf == "2" and ema20_2 < ema200_2
         color.red    
     else if _tf == "5" and ema20_5 < ema200_5
         color.red    
-    else if _tf == "15" and ema5_d < ema20_d and ema20_d < ema200_d
+    else if _tf == "15" and ema20_15 < ema50_15
         color.red    
-    else if _tf == "60" and ema5_d < ema20_d and ema20_d < ema200_d
+    else if _tf == "60" and ema20_60 < ema50_60
         color.red 
     else if _tf == "D" and ema5_d < ema20_d and ema20_d < ema200_d
         color.red
@@ -634,25 +600,28 @@ f_getTrendColor(_tf) =>
     else if _tf == "M" and ema5_d < ema20_d and ema20_d < ema200_d
         color.red              
     else
-        color.new(bgcolor_c, bgtrans_c)    
+        color.new(panel_cell_bg, panelTransparency)    
+
+f_getInternalsColor() =>
+    color.white    
 
 // Fill Header column function
 f_fill_HeaderColumn(_table, _column, _row, _cellText) =>
-    table.cell(_table, _column, _row, _cellText, bgcolor=color.new(bgcolor_c, bgtrans_c), text_size=font_size_c, text_color=font_color_c)
+    table.cell(_table, _column, _row, _cellText, bgcolor=color.new(panel_cell_bg, panelTransparency), text_size=panelTextSize, text_color=panel_font_color)
 // Fill Title column function
 f_fill_TitleColumn(_table, _column, _row, _cellText) =>
-    table.cell(_table, _column, _row, _cellText, bgcolor=color.rgb(0, 137, 123), text_size=font_size_c, text_color=font_color_c)
+    table.cell(_table, _column, _row, _cellText, bgcolor=color.rgb(0, 137, 123), text_size=panelTextSize, text_color=panel_font_color)
 // Fill Header Row function
 f_fill_HeaderRow(_table, _column, _row, _cellText) =>
-    table.cell(_table, _column, _row, f_strRightOf(_cellText, ':'), bgcolor=color.new(bgcolor_r, bgtrans_r), text_size=font_size_r, text_color=font_color_r)
+    table.cell(_table, _column, _row, f_strRightOf(_cellText, ':'), bgcolor=color.new(panel_cell_bg, panelTransparency), text_size=panelTextSize, text_color=panel_font_color)
 // Fill Cell Text  function
 f_fill_CellText(_table, _column, _row, _value, _percentage) =>
     _c_color = _value >= 0 ? color.rgb(38, 166, 154) : color.rgb(240, 83, 80)
     _cellText = _percentage ? str.tostring(_value, format.percent) : str.tostring(_value, '##.##')
-    table.cell(_table, _column, _row, _cellText, bgcolor=_bgcolor, text_size=font_size, text_color=_c_color)
-
+    table.cell(_table, _column, _row, _cellText, bgcolor=panel_cell_bg, text_size=panelTextSize, text_color=panel_font_color)
+// Fill row for Trend direction
 f_fill_CellTextTrend(_table, _column, _row, _value) =>
-    table.cell(_table, _column, _row, _value, bgcolor=f_getTrendColor(_value), text_size=font_size, text_color=color.white)
+    table.cell(_table, _column, _row, _value, bgcolor=f_getTrendColor(_value), text_size=panelTextSize, text_color=color.white)
 
 // Fill Table Title Row  function
 f_fill_TableHeaderTitleRow(_table, t_row) =>
@@ -693,16 +662,10 @@ f_fill_TableRowTrend(_table, _row, ticker_one, ticker_two, ticker_three, ticker_
     f_fill_CellTextTrend(_table, 7, _row, ticker_seven)   
      
 //Table Settings
-Panel_loc = input.string('Top Right', 'Panel Position', options=['Top Right', 'Bottom Right', 'Top Left', 'Bottom Left', 'Middle Right', 'Bottom Center'], group='Table position')
+var panel_position = panelLocation == 'Top Left' ? position.top_left : panelLocation == 'Bottom Left' ? position.bottom_left : panelLocation == 'Middle Right' ? position.middle_right : panelLocation == 'Bottom Center' ? position.bottom_center : panelLocation == 'Top Right' ? position.top_right : position.bottom_right
+var t = table.new(panel_position, 8, 120, border_color=color.new(panel_cell_bg, panelTransparency), border_width=1, frame_color=color.new(panel_cell_bg, panelTransparency), frame_width=1, bgcolor=color.new(panel_cell_bg, panelTransparency))
 
-var panel_position = Panel_loc == 'Top Left' ? position.top_left : Panel_loc == 'Bottom Left' ? position.bottom_left : Panel_loc == 'Middle Right' ? position.middle_right : Panel_loc == 'Bottom Center' ? position.bottom_center : Panel_loc == 'Top Right' ? position.top_right : position.bottom_right
-var t = table.new(panel_position, 8, 120, border_color=color.new(border_color, border_trans), border_width=border_width, frame_color=color.new(frame_color, frame_trans), frame_width=frame_width, bgcolor=color.new(_bgcolor, bgtrans))
-
-// Symbol Settings 
-_i_StockTable = input.bool(true, 'Display Stocks ? ', group='Symbol Settings')
-_Index = input.string('BankNifty', 'Panel Position', options=['BankNifty', 'Nifty'], group='Symbol Settings')
-
-_tickerDOW      = input.symbol('MES1!', 'MES', group='Symbol Settings')
+// _tickerDOW      = input.symbol('MES1!', 'MES', group='Symbol Settings')
 _tickerVIX      = request.security('CBOE:VIX', '1', close, barmerge.gaps_off, lookahead = barmerge.lookahead_on)
 _tickerDXY      = request.security('TVC:DXY', '1', close, barmerge.gaps_off, lookahead = barmerge.lookahead_on)
 _tickerADD      = request.security('USI:ADD', '1', close, barmerge.gaps_off, lookahead = barmerge.lookahead_on)
@@ -711,21 +674,6 @@ _tickerVOLD     = request.security('USI:VOLD', '1', close, barmerge.gaps_off, lo
 _tickerTICK     = request.security('USI:TICK', '1', close, barmerge.gaps_off, lookahead = barmerge.lookahead_on)
 _tickerATR      = request.security(syminfo.tickerid, "15", ta.atr(14))
 
-_ticker1        = input.symbol('MGC1!', 'MGC', group='Symbol Settings')
-_ticker2        = input.symbol('MCL1!', 'MCL', group='Symbol Settings')
-
-_ticker3 = _Index == 'BankNifty' ? input.symbol('NSE:HDFCBANK', 'BNF Symbol 3', group='Symbol Settings') : input.symbol('NSE:RELIANCE', 'Nifty Symbol 3', group='Symbol Settings')
-_ticker4 = _Index == 'BankNifty' ? input.symbol('NSE:ICICIBANK', 'BNF Symbol 4', group='Symbol Settings') : input.symbol('NSE:INFY', 'Nifty Symbol 4', group='Symbol Settings')
-// Get Symbol Price changes in multiple timeframes
-
-[_tickerDOW_LTP, _tickerDOW_changePrice, _tickerDOW_pct_D, _tickerDOW_pct_CTF, _tickerDOW_pct_MTF, _tickerDOW_pct_HTF] = f_getPercentageChangeAll(_tickerDOW)
-// [_trend_2m, _trend_5m, _trend_15m, _trend60m, _trend_d, _trend_w, _trend_m] = f_getTrend('2', '5', '15', '60', 'D', 'W', 'M')
-
-if barstate.islast
-    f_fill_TableHeaderTitleRow(t, 0)
-    f_fill_TableHeaderRow(t, 1, '%', 'VIX', 'DXY', 'ADD', 'VOLD', 'ATR-15m', 'TICK')
-    f_fill_TableRow(t, 2, '', _tickerVIX, _tickerDXY, _tickerADD, _tickerVOLD, _tickerATR,_tickerTICK)
-    f_fill_TableRowTrend(t, 3, '2', '5', '15', '60', 'D', 'W', 'M')
-    // f_fill_TableRow(t, 4, ':MGC', _ticker1_LTP, _ticker1_changePrice, _ticker1_pct_D, _ticker1_pct_CTF, _ticker1_pct_MTF, _ticker1_pct_HTF)
-    // f_fill_TableRow(t, 5, ':MES', _ticker2_LTP, _ticker2_changePrice, _ticker2_pct_D, _ticker2_pct_CTF, _ticker2_pct_MTF, _ticker2_pct_HTF)
-    // f_fill_TableRow(t,5,':INDIA VIX',_tickerINDVIX_LTP,_tickerINDVIX_changePrice,_tickerINDVIX_pct_D,_tickerINDVIX_pct_CTF,_tickerINDVIX_pct_MTF,_tickerINDVIX_pct_HTF)
+f_fill_TableHeaderRow(t, 1, '%', 'VIX', 'DXY', 'ADD', 'VOLD', 'ATR-15m', 'TICK')
+f_fill_TableRow(t, 2, '', _tickerVIX, _tickerDXY, _tickerADD, _tickerVOLD, _tickerATR,_tickerTICK)
+f_fill_TableRowTrend(t, 3, '2', '5', '15', '60', 'D', 'W', 'M')
