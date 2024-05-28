@@ -6,6 +6,7 @@ FEATURES:
 Automatic Anchored VWAP to D/W/M/Y starts for charting outside of Forex.  
 Automatic Previous D/W/M high and lows.  
 20/50/200 EMA per Blue's setup.  
+Panel overlay for trend direction based on similar script shared by Blue on ToS (includes internals as well).  
     
 STILL TESTING: 
     
@@ -18,7 +19,8 @@ UPCOMING:
 Auto Anchored Fade VWAPS?  
 ~~Auto Globex High/Low for previous session.~~  
 Toggle historical VWAPS.  
-A+ Trade finder (will post details on system once testing phase).  
+A+ Trade finder (will post details on system once testing phase). 
+Minimalist mode.  
     
 HOW TO USE: 
     
