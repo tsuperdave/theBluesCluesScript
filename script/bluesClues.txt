@@ -1,7 +1,5 @@
-// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
-// © thesuperdave
-// credit to © MichelT for VWAP
-
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © thesuperdave                                                       
 //                                                       
 //                       ---=-----                       
 //                 ---------------------                 
@@ -33,660 +31,238 @@
 //   *+=-------- *+=-------=   *==--------               
 //    +++======  *+=-------=   *=---------                             
 //               *+=-------=   *=========                
-//              *+=-------=     ======                  
+//               *+=-------=     ======                  
 //               *+---------        =                    
 //               *+========                              
-//                 +++====    
+//                 +++====                               
+                                                                                                                                                                 
 
 //@version=5
-indicator(title="Blue's Clues", shorttitle="Blue's Clues", overlay=true)
+//########################################### Strategy definition ######################################################/
+strategy('BluesCluesStrategy', overlay=true, initial_capital=50000, default_qty_type=strategy.percent_of_equity, 
+         default_qty_value=200, commission_type=strategy.commission.percent, pyramiding=1, commission_value=01, 
+         max_lines_count=500, max_labels_count=500, max_boxes_count=500)
+
+//########################################### Entry and exit parameters ######################################################/
+i_entryType             = input.string('Stop', title='Entry Type', options=['Market', 'Stop', 'Limit', 'Stop-Limit'], group='Entry Parameters')
+i_dcLength              = input.int(40, step=10, title='Donchian Length', group='Entry Parameters')
+i_htfResolution         = input.timeframe('W', title='Higher Timeframe', group='Entry Parameters')
+
+i_stopType              = input.string('Stop', title='Stop Type', options=['Market', 'Stop'], group='Exit Parameters')
+i_takeProfit            = input.bool(false, title='Take Initial Profit', group='Exit Parameters')
+i_takeProfitRR          = input.float(10, step=0.5, title='Risk/Reward (Take Profit)', group='Exit Parameters')
+i_takeProfitQty         = input.int(30, step=5, minval=5, maxval=100, title='Take Profit Percent', group='Exit Parameters')
+i_atrMaType             = input.string('sma', title='ATR MA Type (Stop-Limit)', options=['sma', 'ema', 'hma', 'rma', 'vwma', 'wma'], group='Exit Parameters')
+i_atrLength             = input.int(22, title='ATR Length (Stop-Limit', step=5, group='Exit Parameters')
+i_atrMultStop           = input.float(0.5, step=0.5, title='ATR Multiplier (Stop-Limit)', group='Exit Parameters')
+
+//############################################ Generic Strategy Parameters ###################################################/
+i_tradeDirection        = input.string(title='Trade Direction', defval=strategy.direction.all, options=[strategy.direction.all, strategy.direction.long, strategy.direction.short], group='Trade Filters')
+strategy.risk.allow_entry_in(i_tradeDirection)
+i_startTime             = input.time(defval=timestamp('01 Jan 2010 00:00 +0000'), title='Start Time', group='Trade Filters')
+i_endTime               = input.time(defval=timestamp('01 Jan 2099 00:00 +0000'), title='End Time', group='Trade Filters')
+inDateRange             = time >= i_startTime and time <= i_endTime
+
+//################################################## Generic Methods #########################################################/
+f_secureSecurity(_symbol, _res, _src, _offset) =>
+    request.security(_symbol, _res, _src[_offset], lookahead=barmerge.lookahead_on)
+
+f_getMovingAverage(source, MAType, MALength) =>
+    ma = ta.sma(source, MALength)
+    if MAType == 'ema'
+        ma := ta.ema(source, MALength)
+        ma
+    if MAType == 'hma'
+        ma := ta.hma(source, MALength)
+        ma
+    if MAType == 'rma'
+        ma := ta.rma(source, MALength)
+        ma
+    if MAType == 'vwma'
+        ma := ta.vwma(source, MALength)
+        ma
+    if MAType == 'wma'
+        ma := ta.wma(source, MALength)
+        ma
+    ma
+
+f_getCustomAtr(MAType, MALength) =>
+    f_getMovingAverage(ta.tr, MAType, MALength)
+
+f_get_donchian(dcLength, resolution) =>
+    top             = resolution == '' ? ta.highest(dcLength) : f_secureSecurity(syminfo.tickerid, resolution, ta.highest(dcLength), 1)
+    bottom          = resolution == '' ? ta.lowest(dcLength) : f_secureSecurity(syminfo.tickerid, resolution, ta.lowest(dcLength), 1)
+    mid             = (top + bottom) / 2
+    [mid, top, bottom]
+//###################################################### Calculation and plot ##########################################################/
+
+[mid, top, bottom]          = f_get_donchian(i_dcLength, '')
+[hmid, htop, hbottom]       = f_get_donchian(i_dcLength, i_htfResolution)
+atrStop                     = f_getCustomAtr(i_atrMaType, i_atrLength) * i_atrMultStop
+p_top                       = plot(top, 'TOP', color=color.new(color.lime, 80))
+p_bottom                    = plot(bottom, 'BOTTOM', color=color.new(color.orange, 80))
+p_mid                       = plot(mid, 'MID', color=color.new(color.blue, 80))
+fill(p_top, p_mid, title='Upper', color=color.new(color.lime, 80))
+fill(p_bottom, p_mid, title='Lower', color=color.new(color.orange, 80))
+
+p_htop                      = plot(htop, 'HTOP', color=color.new(color.green, 80))
+p_hbottom                   = plot(hbottom, 'HBOTTOM', color=color.new(color.red, 80))
+p_hmid                      = plot(hmid, 'HMID', color=color.new(color.purple, 80))
+fill(p_htop, p_hmid, title='HTF Upper', color=color.new(color.green, 80))
+fill(p_hbottom, p_hmid, title='HTF Lower', color=color.new(color.red, 80))
+
+// ########################################### Trade conditions and levels ################################################/
+// S/D levels
+// 20ema
+// 50ema
+// 200ema
+// trading type -> scalp/intra, swing, longer term
+// D VWAP
+// W VWAP
+// M VWAP
+// COGs
+// trend
+// SL -> based on tradinf Type and 14 ATR for middle Timeframe such as supertrend
+// Prev D / W / M / Globex levels
+// trend direction for toggle A+ only setups (all TF aligned)
+// pivots?
+//
+// TRADES
+// If in trade, new or equal to pivot made, TP portion of contract. 1:1 move SL up to entry? Trail stop as well
+// max risk 2% of equity.
+// input max DD limit.
+// target 3:1 minimum? Input RR factor
+
+longBias                        = bottom > hmid and inDateRange
+shortBias                       = top < hmid and inDateRange
+
+closeBuyCondition               = strategy.position_size > 0
+closeSellCondition              = strategy.position_size < 0
+
+// Market order conditions
+buyMarketCondition              = ta.crossover(high, top[1]) and i_entryType == 'Market'
+sellMarketCondition             = ta.crossunder(low, bottom[1]) and i_entryType == 'Market'
+closeBuyMarketCondition         = ta.crossunder(low, bottom[1]) and i_stopType == 'Market' and not longBias
+closeSellMarketCondition        = ta.crossover(high, top[1]) and i_stopType == 'Market' and not shortBias
+
+// Stop order conditions
+buySellStopCondition            = i_entryType == 'Stop'
+closeBuySellStopCondition       = i_stopType == 'Stop'
+
+// Limit and stoplimit conditions
+buyLimitCondition               = i_entryType == 'Limit' and high > mid
+sellLimitCondition              = i_entryType == 'Limit' and low < mid
+buyStopLimitCondition           = i_entryType == 'Stop-Limit' and ta.crossover(high, top[1])
+sellStopLimitCondition          = i_entryType == 'Stop-Limit' and ta.crossunder(low, bottom[1])
+// Entry levels for long and short orders via Stop, Limit and Stop-Limit
+buyLevel                        = top
+sellLevel                       = bottom
+buyStopLimit                    = top + atrStop
+sellStopLimit                   = bottom - atrStop
+
+// Exit levels for long and short - to be used in Stop orders
+closeBuyStop                    = bottom
+closeSellStop                   = top
+
+// Take profit conditions and levels for long and short - to be used in Take Profit exit orders
+takeProfitBuyCondition                  = longBias and strategy.position_size > 0 and i_takeProfit
+takeProfitSellCondition                 = shortBias and strategy.position_size < 0 and i_takeProfit
+profitLong                              = top + i_takeProfitRR * (top - bottom)
+profitShort                             = bottom - i_takeProfitRR * (top - bottom)
+profitLong := strategy.position_size <= 0 ? profitLong : high[1] > profitLong[1] ? profitLong[1] + i_takeProfitRR * (top - bottom) : profitLong[1]
+profitShort := strategy.position_size >= 0 ? profitShort : low[1] < profitShort[1] ? profitShort[1] - i_takeProfitRR * (top - bottom) : profitShort[1]
+// ########################################### Trade Statements Using If-Blocks ################################################/
+//Entry for Long Orders
+if longBias
+    //Cancel short pending orders and close existing short trades
+    strategy.cancel('Short')
+    strategy.close('Short')
+    //Long entry based on entry type - market, stop, limit or stop-limit
+    if buyMarketCondition
+        strategy.entry('Long', strategy.long, comment='Long-Market-Order')
+    if buySellStopCondition
+        strategy.entry('Long', strategy.long, stop=buyLevel, oca_name='oca_buy', oca_type=strategy.oca.cancel, comment='Long-Stop-Order')
+    if buyLimitCondition
+        strategy.entry('Long', strategy.long, limit=buyLevel, oca_name='oca_buy', oca_type=strategy.oca.cancel, comment='Long-Limit-Order')
+    if buyStopLimitCondition
+        strategy.entry('Long', strategy.long, limit=buyStopLimit, stop=buyLevel, oca_name='oca_buy', oca_type=strategy.oca.cancel, comment='Long-Stop-Limit-Order')
+
+//Entry for Short Orders
+if shortBias
+    //Cancel long pending orders and close existing long trades
+    strategy.cancel('Long')
+    strategy.close('Long')
+    //Short entry based on entry type - market, stop, limit or stop-limit
+    if sellMarketCondition
+        strategy.entry('Short', strategy.short, comment='Short-Market-Order')
+    if buySellStopCondition
+        strategy.entry('Short', strategy.short, stop=sellLevel, oca_name='oca_sell', oca_type=strategy.oca.cancel, comment='Short-Stop-Order')
+    if sellLimitCondition
+        strategy.entry('Short', strategy.short, limit=sellLevel, oca_name='oca_sell', oca_type=strategy.oca.cancel, comment='Short-Limit-Order')
+    if sellStopLimitCondition
+        strategy.entry('Short', strategy.short, limit=sellStopLimit, stop=sellLevel, oca_name='oca_sell', oca_type=strategy.oca.cancel, comment='Short-Stop-Limit-Order')
+
+//Exit Long order market condition
+if closeBuyCondition and closeBuyMarketCondition
+    strategy.close('Long', comment='Close-Long-Market')
+//Exit Short order by market condition
+if closeSellCondition and closeSellMarketCondition
+    strategy.close('Short', comment='Close-Short-Market')
+
+//Exit by stoploss - Set stoploss beforehand
+if closeBuySellStopCondition
+    if closeBuyCondition
+        strategy.exit('StopLong', 'Long', stop=closeBuyStop, comment='Close-Buy-Stop')
+    if closeSellCondition
+        strategy.exit('StopShort', 'Short', stop=closeSellStop, comment='Close-Sell-Stop')
+
+// Take Profit for Long Order
+if takeProfitBuyCondition
+    strategy.exit('ProfitLong', 'Long', limit=profitLong, qty_percent=i_takeProfitQty, comment='Close-Buy-Profit')
+// Take Profit for Short Order
+if takeProfitSellCondition
+    strategy.exit('ProfitShort', 'Short', limit=profitShort, qty_percent=i_takeProfitQty, comment='Close-Sell-Profit')
+
+// ########################################### Trade Statements Using When - Alternative method ################################################/
+// //Cancen pending orders when market changes its bias
+// strategy.cancel("Long", when=shortBias)
+// strategy.cancel("Short", when=longBias)
+
+// //Close existing trades when market changes its bias
+// strategy.close("Long", when=shortBias)
+// strategy.close("Short", when=longBias)
+
+// //Market orders when Entry Type = Market
+// strategy.entry("Long", strategy.long, when=longBias and buyMarketCondition, comment = "Long-Market-Order")
+// strategy.entry("Short", strategy.short, when=shortBias and sellMarketCondition, comment = "Short-Market-Order")
+
+// //Stop orders when Entry Type = Stop (Buy at higher price and sell at lower price) - suitable for trend following methods
+// strategy.entry("Long", strategy.long, when=longBias and buySellStopCondition, stop=buyLevel,
+//                          oca_name="oca_buy", oca_type=strategy.oca.cancel, comment = "Long-Stop-Order")
+// strategy.entry("Short", strategy.short, when=shortBias and buySellStopCondition, stop=sellLevel,
+//                          oca_name="oca_sell", oca_type=strategy.oca.cancel, comment = "Short-Stop-Order")
+
+// //Limit orders when Entry Type = Limit
+// strategy.entry("Long", strategy.long, when=longBias and buyLimitCondition, limit=buyLevel,
+//                          oca_name="oca_buy", oca_type=strategy.oca.cancel, comment = "Long-Limit-Order")
+// strategy.entry("Short", strategy.short, when=shortBias and sellLimitCondition, stop=sellLevel,
+//                          oca_name="oca_sell", oca_type=strategy.oca.cancel, comment = "Short-Limit-Order")
+
+// //Stop-limit orders when Entry Type = Stop-Limit (Buy at higher price and sell at lower price but with protection) - suitable for trend following methods
+// strategy.entry("Long", strategy.long, when=longBias and buyStopLimitCondition, limit=buyStopLimit, stop=buyLevel,
+//                          oca_name="oca_buy", oca_type=strategy.oca.cancel, comment = "Long-Stop-Limit-Order")
+// strategy.entry("Short", strategy.short, when=shortBias and sellStopLimitCondition, limit=sellStopLimit, stop=sellLevel,
+//                          oca_name="oca_sell", oca_type=strategy.oca.cancel, comment = "Short-Stop-Limit-Order")
+
+// // Stoploss - Exit by market
+// strategy.close("Long", when=closeBuyCondition and closeBuyMarketCondition, comment="Close-Long-Market")
+// strategy.close("Short", when=closeSellCondition and closeSellMarketCondition, comment="Close-Short-Market")
+
+// // Stoploss - Exit by stop
+// strategy.exit("StopLong", "Long", stop=closeBuyStop, when=closeBuyCondition and closeBuySellStopCondition, comment="Close-Buy-Stop")
+// strategy.exit("StopShort", "Short", stop=closeSellStop, when=closeSellCondition and closeBuySellStopCondition, comment="Close-Sell-Stop")
+
+// // Take Profit
+// strategy.exit("ProfitLong", "Long", limit=profitLong, when=takeProfitBuyCondition, qty_percent=i_takeProfitQty, comment="Close-Buy-Profit")
+// strategy.exit("ProfitShort", "Short", limit=profitShort, when=takeProfitSellCondition, qty_percent=i_takeProfitQty, comment="Close-Sell-Profit")
 
-// SETTINGS -----------------------------
-// text, info etc...
-display_set          = display.all - display.price_scale - display.status_line
-ema_text            = "----------------- EMA ------------------"
-bb1                 = "BBands HTF"
-bb2                 = "BB Toggle"
-bb3                 = "BBands LTF"
-vwap                = "----------------- VWAP -----------------"
-dwmLevels           = "------------- D/W/M Levels -------------"
-sdZoneGroupTxt      = "--------- Supply/Demand Zones ----------"
-sdZoneTFSettingTxt  = "-------- S/D Zone TF Settings ----------" 
-groupEma            = "------------- 20/50/200 EMA ------------"
-groupBb             = "------ BBands - 2 Std. Deviation -------"
-groupVwap           = "------- Auto Anchored D/W/M VWAP -------"
-groupSD             = "------------- Supply/Demand ------------"
-groupSDSettings     = "-------- Supply/Demand Settings --------"
-ttBb                = "Shows BBands on LTF"
-groupDwmLevels      = "------------- D/W/M Levels -------------"
-groupCog            = "---------- +/- COG Alerts --------------"
-groupAPlusPanel     = "-------------- A+ Panel  ---------------"
-
-// colors
-ema20color                      = color.new(color.aqua, 50)
-ema50color                      = color.new(color.blue, 50)
-ema200color                     = color.new(color.purple, 50)
-dVwapColor                      = color.new(color.gray, 60)
-wVwapColor                      = color.new(color.yellow, 60)
-mVwapColor                      = color.new(color.orange, 60)
-globexLevelColor                = color.rgb(120, 123, 134, 17)
-dLevelColor                     = color.rgb(16, 105, 207, 18)
-wLevelColor                     = color.rgb(218, 221, 8, 5)
-mLevelColor                     = color.rgb(255, 153, 0, 23)
-bbColor                         = color.new(color.gray, 50)
-cog_bg_color_pos                = color.new(color.green, 90)
-cog_bg_color_neg                = color.new(color.red, 90)
-cog_lbl_color_pos               = color.new(color.green, 90)
-cog_lbl_color_neg               = color.new(color.red, 90)
-cog_lbl_text_color              = color.new(color.black, 0)
-panel_color                     = color.new(color.gray, 70)
-panel_cell_bg                   = #2c5257e6
-panel_cell_numbers_bg           = color.new(color.black, 20)
-panel_internals_extreme_up      = color.new(color.green, 10)
-panel_internals_elevated        = color.new(color.green, 10)
-panel_internals_flat            = color.white
-panel_internals_dropping        = color.red
-panel_internals_extreme_down    = color.red
-panel_font_color                = color.white
-
-// GLOBALS /  CALCS ----------------------------
-Offset(X)=>
-    Bar=math.min(time - time[1], time[1] - time[2])
-    time + Bar * (1 + X * 1)
-f_get_changePercentage(_p1, _p2) => (_p1 - _p2) * 100 / _p2
-
-tf                  = timeframe.period
-displayLtf          = timeframe.isintraday and timeframe.multiplier <= 5
-displayMtf          = timeframe.isintraday and (timeframe.multiplier >= 6 and timeframe.multiplier <= 60)
-displayHtf          = timeframe.isdwm
-displayVwapD        = tf == "D"
-displayVwapLtf      = displayLtf
-isFutures           = syminfo.type == 'futures'
-isForex             = syminfo.type == 'forex'
-
-src     = close
-ema20   = ta.ema(src, 20)
-ema50   = ta.ema(src, 50)
-ema200  = ta.ema(src, 200)
-dev     = 2.0 * ta.stdev(close, 20)
-
-upperHtf = ema20 + dev
-lowerHtf = ema20 - dev
-
-shortBbandEntryHtf      = close > upperHtf
-longBbandEntryHtf       = close < lowerHtf
-
-MILLIS_IN_DAY   = 86400000
-dwmBarTime      = timeframe.isdwm ? time : time("D")
-
-globexBlank         = "\n‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏"
-dBlank              = "\n‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏"
-wBlank              = "\n‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏"
-mBlank              = "‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏   ‏"
-
-[_gT, _gH, _gL]                         = request.security(syminfo.tickerid, "930", [time[1], high[1], low[1]],  barmerge.gaps_off, barmerge.lookahead_on)
-[_dH, _dL, _dC]                         = request.security(syminfo.tickerid, "D", [high[1], low[1], close[1]],  barmerge.gaps_off, barmerge.lookahead_on)
-[_wH, _wL, _wC]                         = request.security(syminfo.tickerid, "W", [high[1], low[1], close[1]],  barmerge.gaps_off, barmerge.lookahead_on)
-[_mH, _mL, _mC]                         = request.security(syminfo.tickerid, "M", [high[1], low[1], close[1]],  barmerge.gaps_off, barmerge.lookahead_on)
-
-is20and200Bullish       = ema20 > ema200     
-is20and50Bullish        = ema20 > ema50
-is50and200Bullish       = ema50 > ema200
-is20and200Bearish       = not is20and200Bullish
-is20and50Bearish        = not is20and50Bullish
-is50and200Bearish       = not is50and200Bullish
-
-legOutCandleSize    = 2.0
-
-// INPUTS --------------------------------
-
-ltfColor = input(defval = ema20color, title="20 EMA", inline = ema_text, group = groupEma)
-mtfColor = input(defval = ema50color, title="50 EMA", inline = ema_text, group = groupEma)
-htfColor = input(defval = ema200color, title="200 EMA", inline = ema_text, group = groupEma)
-
-upperHtfColor = input(defval = bbColor, title="Upper HTF Band", inline = bb1, group = groupBb)
-lowerHtfColor = input(defval = bbColor, title="Lower HTF Band", inline = bb1, group = groupBb)
-
-dvColor = input(defval = dVwapColor, title="D VWAP Color", inline = vwap, group = groupVwap)
-wvColor = input(defval = wVwapColor, title="W VWAP Color", inline = vwap, group = groupVwap)
-mvColor = input(defval = mVwapColor, title="M VWAP Color", inline = vwap, group = groupVwap)
-
-globex_Line_Color   = input.color(defval = globexLevelColor, title = "Globex Level", inline = "globexColor", group = groupDwmLevels)
-d_Line_Color        = input.color(defval = dLevelColor, title = "Daily Level", inline = dwmLevels, group = groupDwmLevels)
-w_Line_Color        = input.color(defval = wLevelColor, title = "Weekly Level",  inline = dwmLevels, group = groupDwmLevels)
-m_Line_Color        = input.color(defval = mLevelColor, title = "Monthly Level", inline = dwmLevels, group = groupDwmLevels)
-showGlobexLevels    = input.bool(defval = true, title = "Show Globex Hi/Lo?", inline = "globex", group = groupDwmLevels)
-showGlobexLabels    = input.bool(defval = true, title = 'Show Globex Label?', inline = "globex", group = groupDwmLevels)
-extendLines         = input.bool(defval = false, title = "Extend Levels Across Screen?", inline = dwmLevels, group = groupDwmLevels)
-dwmLineWidth        = input.int(defval = 2, title = "Levels Line Width", minval = 1, maxval = 4, step = 1, group = groupDwmLevels)
-
-showHTFsdZones   = input.bool(true, title = "Show HTF Supply/Demand Zones?", inline = sdZoneGroupTxt, group = groupSD)
-showLTFsdZones   = input.bool(true, title = "Show LTF Supply/Demand Zones?", inline = sdZoneGroupTxt, group = groupSD)
-sdColorLTF       = input.color(defval = #e7c6fd7a, title = 'LTF S/D Color', inline = "LTF Color", group = groupSD)
-sdBorderColorLTF = input.color(defval = #e7c6fd7a, title = 'LTF S/D Border Color', inline = "LTF Color", group = groupSD)
-sdColorITF       = input.color(defval = #fdc6ef7a, title = 'ITF S/D Color', inline = "ITF Color", group = groupSD)
-sdBorderColorITF = input.color(defval = #fdc6ef7a, title = 'ITF S/D Border Color', inline = "ITF Color", group = groupSD)
-sdColorD         = input.color(defval = #00a2ff1a, title = 'D S/D Color', inline = "D Color", group = groupSD)
-sdBorderColorD   = input.color(defval = #00a2ff1a, title = 'D S/D Border Color', inline = "D Color", group = groupSD)
-sdColorW         = input.color(defval = #fcf7001a, title = 'W S/D Color', inline = "W Color", group = groupSD)
-sdBorderColorW   = input.color(defval = #fcf7001a, title = 'W S/D Border Color', inline = "W Color", group = groupSD)
-sdColorM         = input.color(defval = #fc87011a, title = 'M S/D Color', inline = "M Color", group = groupSD)
-sdBorderColorM   = input.color(defval = #fc87011a, title = 'M S/D Border Color', inline = "M Color", group = groupSD)
-
-sdOffset        = input.int(defval = 2, minval = 0, maxval = 30, title="Extend Zones", group = groupSDSettings, tooltip = 'Extends Zone X number of bars past current price')
-showZoneText    = input(true, title = "Show Zone Text", inline = "ZoneTxt", group = groupSDSettings)
-sdZoneTextColor = input.color(defval = color.rgb(0, 0, 0), title = 'S/D Zone Text Color', group = groupSDSettings)
-sdTextAlignV    = input.string("Top", title="Text Align (Vertical)", options=["Top", "Center", "Bottom"], group = groupSDSettings)
-show2mZones     = input.bool(false, title="Show 2m", inline = "LTF", group = groupSDSettings)
-show5mZones     = input.bool(false, title="Show 5m", inline = "LTF", group = groupSDSettings)
-show15mZones    = input.bool(false, title="Show 15m", inline = "LTF", group = groupSDSettings)
-show30mZones    = input.bool(false, title="Show 30m", inline = "ITF", group = groupSDSettings)
-show60mZones    = input.bool(false, title="Show 60m", inline = "ITF", group = groupSDSettings)
-show4hZones     = input.bool(false, title="Show 4h", inline = "ITF", group = groupSDSettings)
-showDZones      = input.bool(true, title="Show D", inline = "HTF", group = groupSDSettings)
-showWZones      = input.bool(true, title="Show W", inline = "HTF", group = groupSDSettings)
-showMZones      = input.bool(true, title="Show M", inline = "HTF", group = groupSDSettings)
-
-if sdTextAlignV == 'Bottom'
-    sdTextAlignV := text.align_bottom
-if sdTextAlignV == 'Center'
-    sdTextAlignV := text.align_center
-if sdTextAlignV == 'Top'
-    sdTextAlignV := text.align_top
-
-cog_color_pos   = input.color(defval = cog_lbl_color_pos, title="+COG Label Color", inline = "CogColor", group = groupCog)
-cog_color_neg   = input.color(defval = cog_lbl_color_neg, title="-COG Label Color", inline = "CogColor", group = groupCog)
-cog_txt_color   = input.color(defval = cog_lbl_text_color, title="COG Label Text Color", inline = "CogColor", group = groupCog)
-showCogs        = input.bool(true, title="Show Recent Cogs", inline = "Cogs", group = groupCog)
-showAllCogs     = input.bool(false, title="Show All Cogs", inline = "Cogs", group = groupCog)
-
-showAPlusPanel      = input.bool(true, title="Show A+ Setup Helper", inline = "Panel", group = groupAPlusPanel)
-showMinimalistMode  = input.bool(false, title="Minimalist Mode", inline = "PanelMin", group = groupAPlusPanel)
-panelLocation       = input.string('Bottom Right', 'Panel Position', options=['Top Right', 'Bottom Right', 'Top Left', 'Bottom Left', 'Middle Right', 'Bottom Center'], inline = "PanelLoc", group = groupAPlusPanel)
-panelTransparency   = input.int(defval=20, title='Panel Transparency', group=groupAPlusPanel, inline='PanelTrans', minval=0, maxval=100, step=10) 
-panelTextSize       = input.string(defval='normal', title='Panel Size', group= groupAPlusPanel, inline='panelTextSize', options=['auto', 'tiny', 'small', 'normal', 'large', 'huge'])
-panelATRInput       = input.string(defval='15', title='ATR Input', group= groupAPlusPanel, inline='PanelATR', options=['2', '5', '15', '30', '60', 'D', 'W', 'M'])             
-
-// EMAs -----------------------------
-plot(ema20, title="EMA-20", color = ltfColor, offset = 0, linewidth = 2, display = display_set)
-plot(displayMtf ? ema50 : na, title="EMA-50", color = mtfColor, offset = 0, linewidth = 2, display = display_set)
-plot(displayHtf or displayLtf ? ema200 : na, title="EMA-200", color = htfColor, offset = 0, linewidth = 2, display = display_set)
-
-// B BANDS --------------------------
-p1Htf = plot(displayHtf ? upperHtf : na, "HTF Upper BBand", color = upperHtfColor, display = display_set)
-p2Htf = plot(displayHtf ? lowerHtf : na, "HTF Lower BBand", color = lowerHtfColor, display = display_set)
-
-// VWAP ---------------------------------
-// If it's a short day, then there could be no daily bar. Take a previous one.
-if na(dwmBarTime)
-    dwmBarTime := nz(dwmBarTime[1])
-var periodStartD = time - time // zero
-var periodStartW = time - time // zero
-var periodStartM = time - time // zero
-
-makeMondayZero(dayOfWeek) => (dayOfWeek + 5) % 7
-
-tradingDayStart(t) =>
-    y = year(t)
-    m = month(t)
-    d = dayofmonth(t)
-    timestamp(y, m, d, 0, 0, 0)
-
-numDaysBetween(time1, time2) =>
-    y1 = year(time1)
-    m1 = month(time1)
-    d1 = dayofmonth(time1)
-    
-    y2 = year(time2)
-    m2 = month(time2)
-    d2 = dayofmonth(time2)
-    
-    diff = math.abs(timestamp("GMT", y1, m1, d1, 0, 0) - timestamp("GMT", y2, m2, d2, 0, 0))
-    diff / MILLIS_IN_DAY
-
-tradingDay = tradingDayStart(dwmBarTime)
-
-isNewDPeriod() =>
-    isNew = false
-    if tradingDay != nz(tradingDay[1])
-        isNew := na(tradingDay[1]) or tradingDay >= tradingDay[1]
-    
-    isNew
-
-isNewWPeriod() =>
-    isNew = false
-    if tradingDay != nz(tradingDay[1])
-        DAYS_IN_WEEK = 7
-        if isFutures
-            isNew := dayofweek(periodStartW) + numDaysBetween(periodStartW, tradingDay) >= DAYS_IN_WEEK
-        else
-            isNew := makeMondayZero(dayofweek(periodStartW)) + numDaysBetween(periodStartW, tradingDay) >= DAYS_IN_WEEK
-            
-    isNew
-
-isNewMPeriod() =>
-    isNew = false
-    if tradingDay != nz(tradingDay[1])
-        isNew := month(periodStartM) != month(tradingDay) or year(periodStartM) != year(tradingDay)
-            
-    isNew
-
-sumSrcD = float(na)
-sumVolD = float(na)
-sumSrcD := nz(sumSrcD[1], 0)
-sumVolD := nz(sumVolD[1], 0)
-
-sumSrcW = float(na)
-sumVolW = float(na)
-sumSrcW := nz(sumSrcW[1], 0)
-sumVolW := nz(sumVolW[1], 0)
-
-sumSrcM = float(na)
-sumVolM = float(na)
-sumSrcM := nz(sumSrcM[1], 0)
-sumVolM := nz(sumVolM[1], 0)
-
-sumSrcY = float(na)
-sumVolY = float(na)
-sumSrcY := nz(sumSrcY[1], 0)
-sumVolY := nz(sumVolY[1], 0)
-
-if isNewDPeriod()
-    periodStartD := tradingDay
-    sumSrcD := 0.0
-    sumVolD := 0.0
-
-if isNewWPeriod()
-    periodStartW := tradingDay
-    sumSrcW := 0.0
-    sumVolW := 0.0
-
-if isNewMPeriod()
-    periodStartM := tradingDay
-    sumSrcM := 0.0
-    sumVolM := 0.0 
-
-if not na(hlc3) and not na(volume)
-    sumSrcD := sumSrcD + hlc3 * volume
-    sumVolD := sumVolD + volume
-    sumSrcW := sumSrcW + hlc3 * volume
-    sumVolW := sumVolW + volume
-    sumSrcM := sumSrcM + hlc3 * volume
-    sumVolM := sumVolM + volume
-      
-dVwapValue = sumSrcD / sumVolD
-wVwapValue = sumSrcW / sumVolW
-mVwapValue = sumSrcM / sumVolM
-plot(not isForex ? dVwapValue : na, title="D VWAP", style = plot.style_circles, color=dvColor, linewidth = 2, display = display_set)
-plot(not isForex ? wVwapValue : na, title="W VWAP", style = plot.style_circles, color=wvColor, linewidth = 2, display = display_set)
-plot(not isForex ? mVwapValue : na, title="M VWAP", style = plot.style_circles, color=mvColor, display = display_set)
-
-// DWM / Globex PRICE LEVELS --------------------------
-gHi_text='G Hi | ' + str.tostring(_gH, '0.00')
-gLo_text='G Lo | ' + str.tostring(_gL, '0.00')
-// if timeframe.isintraday and syminfo.type == 'futures'
-//     if showGlobexLevels
-//         LINE_HI     = line.new(Offset(10), _gH, _gT, _gH, width = dwmLineWidth, color = globexLevelColor, style = line.style_dotted, extend = extend.none, xloc = xloc.bar_time)
-//         LINE_LO     = line.new(Offset(10), _gL, _gT, _gL, width = dwmLineWidth, color = globexLevelColor, style = line.style_dotted, extend = extend.none, xloc = xloc.bar_time)
-//         line.delete(LINE_HI[1])
-//         line.delete(LINE_LO[1])
-//     if showGlobexLevels and showGlobexLabels
-//         LABEL_HI    = label.new(Offset(10), _gH, gHi_text, textcolor=color.rgb(3, 77, 110), color = globexLevelColor, style = label.style_label_left, size = size.small, xloc = xloc.bar_time)
-//         LABEL_LO    = label.new(Offset(10), _gL, gLo_text, textcolor=color.rgb(3, 77, 110), color = globexLevelColor, style = label.style_label_left, size = size.small, xloc = xloc.bar_time)
-//         label.delete(LABEL_HI[1])
-//         label.delete(LABEL_LO[1])
-
-daily_High_Line     = line.new(time, _dH, time + 1, _dH, xloc = xloc.bar_time, extend = extendLines ? extend.both : extend.right, color = d_Line_Color, style = line.style_dotted, width = dwmLineWidth)
-daily_Low_Line      = line.new(time, _dL, time + 1, _dL, xloc = xloc.bar_time, extend = extendLines ? extend.both : extend.right, color = d_Line_Color, style = line.style_dotted, width = dwmLineWidth)
-line.delete(daily_High_Line[1])
-line.delete(daily_Low_Line[1])
-label_daily_High    = label.new(bar_index, _dH, text = dBlank + "Prev D High : " + str.tostring(_dH, format.mintick), color = color.new(color.black, 100), style = label.style_label_left, textcolor = d_Line_Color, size = size.small, textalign = text.align_center)
-label_daily_Low     = label.new(bar_index, _dL, text = dBlank + "Prev D Low : "  +  str.tostring(_dL, format.mintick), color = color.new(color.black, 100), style = label.style_label_left, textcolor = d_Line_Color, size = size.small, textalign = text.align_center)
-label.delete(label_daily_High[1])
-label.delete(label_daily_Low[1])
-
-weekly_High_Line    = line.new(time, _wH, time + 1, _wH, xloc = xloc.bar_time, extend = extendLines ? extend.both : extend.right, color = w_Line_Color, style = line.style_dotted, width = dwmLineWidth)
-weekly_Low_Line     = line.new(time, _wL, time + 1, _wL, xloc = xloc.bar_time, extend = extendLines ? extend.both : extend.right, color = w_Line_Color, style = line.style_dotted, width = dwmLineWidth)
-line.delete(weekly_High_Line[1])
-line.delete(weekly_Low_Line[1])
-label_weekly_High   = label.new(bar_index, _wH, text = wBlank + "Prev W High : " + str.tostring(_wH, format.mintick), color = color.new(color.black, 100), style = label.style_label_left, textcolor = w_Line_Color, size = size.small, textalign = text.align_center)
-label_weekly_Low    = label.new(bar_index, _wL, text = wBlank + "Prev W Low : "  + str.tostring(_wL, format.mintick), color = color.new(color.black, 100), style = label.style_label_left, textcolor = w_Line_Color, size = size.small, textalign = text.align_center)
-label.delete(label_weekly_High[1])
-label.delete(label_weekly_Low[1])
-
-monthly_High_Line   = line.new(time, _mH,  time + 1, _mH,  xloc = xloc.bar_time, extend = extendLines ? extend.both : extend.right, color = m_Line_Color, style = line.style_dotted, width = dwmLineWidth)
-monthly_Low_Line    = line.new(time, _mL,   time + 1, _mL,   xloc = xloc.bar_time, extend = extendLines ? extend.both : extend.right, color = m_Line_Color, style = line.style_dotted, width = dwmLineWidth)
-line.delete(monthly_High_Line[1])
-line.delete(monthly_Low_Line[1])
-label_monthly_High  = label.new(bar_index, _mH, text = mBlank + "Prev M High : " + str.tostring(_mH, format.mintick) + "\n", color = color.new(color.black, 100), style = label.style_label_left, textcolor = m_Line_Color, size = size.small, textalign = text.align_center)
-label_monthly_Low   = label.new(bar_index, _mL, text = mBlank + "Prev M Low : "  + str.tostring(_mL, format.mintick) + "\n", color = color.new(color.black, 100), style = label.style_label_left, textcolor = m_Line_Color, size = size.small, textalign = text.align_center)
-label.delete(label_monthly_High[1])
-label.delete(label_monthly_Low[1])
-
-// Supply and Demand Zones -----------------------------------------
-if tf == 'D'
-    tf := '1440'
-if tf == 'W'
-    tf := '10080'
-if showLTFsdZones
-    tf := '1'
-
-momentCTD           = math.round(time(tf) + (sdOffset * 60000 * str.tonumber(tf)))
-var box[] supply_HT = array.new_box()
-var box[] demand_HT = array.new_box()
-
-drawSupplyZone(formattedTf, ctd_ht, top_ht, ctd, bot_ht, box_color, border_color) =>
-    box supply = box.new(left=ctd_ht, top=top_ht, right=ctd, bgcolor=box_color, bottom=bot_ht, xloc=xloc.bar_time)
-    box.set_border_color(supply, border_color)
-    if showZoneText
-        box.set_text(supply, formattedTf)
-        box.set_text_size(supply, size.small)
-        box.set_text_color(supply, sdZoneTextColor)
-        box.set_text_halign(supply, text.align_right)
-        box.set_text_valign(supply, sdTextAlignV)
-    array.push(supply_HT, supply)
-
-drawDemandZone(formattedTf, ctd_ht, top_ht, ctd, bot_ht, box_color, border_color) =>
-    box demand = box.new(left=ctd_ht, top=top_ht, right=ctd, bottom=bot_ht, bgcolor=box_color, xloc=xloc.bar_time)
-    box.set_border_color(demand, border_color)
-    if showZoneText
-        box.set_text(demand, formattedTf)
-        box.set_text_size(demand, size.small)
-        box.set_text_color(demand, sdZoneTextColor)
-        box.set_text_halign(demand, text.align_right)
-        box.set_text_valign(demand, sdTextAlignV)
-    array.push(demand_HT, demand)
-
-// drawZone(formattedTf, left_ctd_ht, top_ht, ctd_ht, bot_ht, box_color, border_color) =>
-
-
-createZones(timeframe) => 
-    [open_HT, high_HT, low_HT, close_HT]    = request.security(syminfo.tickerid, timeframe, [open[1], high[1], low[1], close[1]], lookahead = barmerge.lookahead_on)
-
-    redCandle_HT        = close_HT < open_HT
-    greenCandle_HT      = close_HT > open_HT
-    neutralCandle_HT    = close_HT == open_HT
-    candleChange_HT     = math.abs(close_HT - open_HT)
-
-    formatTf            = ""
-    bgColorForBox       = sdColorLTF
-    borderColorForBox   = sdBorderColorLTF
-
-    if timeframe == '2'
-        formatTf := '2m'
-    else if timeframe == '5'
-        formatTf := '5m'
-    else if timeframe == '15'
-        formatTf := '15m'
-    else if timeframe == '30'
-        formatTf := '30m'
-        bgColorForBox := sdColorITF
-        borderColorForBox := sdBorderColorITF
-    else if timeframe == '45'
-        formatTf := '45m'
-        bgColorForBox := sdColorITF
-        borderColorForBox := sdBorderColorITF
-    else if timeframe == '60'
-        formatTf := '1h'
-        bgColorForBox := sdColorITF
-        borderColorForBox := sdBorderColorITF
-    else if timeframe == '240'
-        formatTf := '4h'
-        bgColorForBox := sdColorITF
-        borderColorForBox := sdBorderColorITF
-    else if timeframe == 'D'
-        formatTf := 'D'
-        bgColorForBox := sdColorD
-        borderColorForBox := sdBorderColorD
-    else if timeframe == 'W'
-        formatTf := 'W'
-        bgColorForBox := sdColorW
-        borderColorForBox := sdBorderColorW
-    else if timeframe == 'M'
-        formatTf := 'M'
-        bgColorForBox := sdColorM
-        borderColorForBox := sdBorderColorM    
-    // test M    
-
-    var float bottomBox_HT = na
-    var float topBox_HT = na
-    momentCTD_HT = time(timeframe)[2]
-
-    if (((redCandle_HT and greenCandle_HT[1]) or (redCandle_HT and neutralCandle_HT[1])) and (candleChange_HT / candleChange_HT[1]) >= legOutCandleSize and barstate.isconfirmed[1] and (showHTFsdZones or showLTFsdZones) and close_HT[1] >= close_HT and open_HT[1] <= open_HT)
-
-        if high_HT >= high_HT[1]
-            topBox_HT := high_HT
-        else 
-            topBox_HT := high_HT[1]
-
-        drawSupplyZone(formatTf, momentCTD_HT, topBox_HT, momentCTD, open_HT[1], bgColorForBox, borderColorForBox)
-  
-    if (((greenCandle_HT and redCandle_HT[1]) or (greenCandle_HT and neutralCandle_HT[1])) and (candleChange_HT / candleChange_HT[1]) >= legOutCandleSize and barstate.isconfirmed[1] and (showHTFsdZones or showLTFsdZones) and close_HT[1] <= close_HT and open_HT[1] >= open_HT)
-
-        if low_HT <= low_HT[1]
-            bottomBox_HT := low_HT
-        else 
-            bottomBox_HT := low_HT[1]
-
-        drawDemandZone(formatTf, momentCTD_HT, open_HT[1], momentCTD, bottomBox_HT, bgColorForBox, borderColorForBox)
-
-if show2mZones and str.tonumber(tf) <= 2
-    createZones('2')
-if show5mZones and str.tonumber(tf) <= 5
-    createZones('5')
-if show15mZones and str.tonumber(tf) <= 15
-    createZones('15')
-if show30mZones and str.tonumber(tf) <= 30
-    createZones('30')
-if show60mZones and str.tonumber(tf) <= 60
-    createZones('60')
-if show4hZones and str.tonumber(tf) <= 240
-    createZones('240') 
-if showDZones and str.tonumber(tf) <= 1440
-    createZones('D')
-if showWZones and str.tonumber(tf) <= 10080
-    createZones('W')
-if showMZones and str.tonumber(tf) <= 43800
-    createZones('M')
-
-i = 0
-while i < array.size(supply_HT) and array.size(supply_HT) > 0
-    box currentBox = array.get(supply_HT, i)
-    float breakLevel = box.get_top(currentBox)
-    if high > breakLevel 
-        array.remove(supply_HT, i)
-        box.delete(currentBox)
-        int(na)
-    else
-        box.set_right(currentBox, momentCTD)
-        i += 1
-        int(na)
-
-i2 = 0
-while i2 < array.size(demand_HT) and array.size(demand_HT) > 0
-    box currentBox = array.get(demand_HT, i2)
-    float breakLevel = box.get_bottom(currentBox)
-    if low < breakLevel 
-        array.remove(demand_HT, i2)
-        box.delete(currentBox)
-        int(na)
-    else
-        box.set_right(currentBox, momentCTD)
-        i2 += 1
-        int(na)
-
-// COG Finder --------------------------------
-candle_hi           = math.max(high, low)
-candle_body_hi      = math.max(close, open)
-candle_lo           = math.min(high, low)
-candle_body_lo      = math.min(close, open)
-candle_body         = candle_body_hi - candle_body_lo
-candle_basing       = (candle_body * 100)/(candle_hi - candle_lo)
-is_basing_candle    = math.abs(candle_basing) < 50
-is_doji             = candle_body_hi == candle_body_lo
-
-candle_green        = open < close
-candle_red          = open > close
-candle_range        = high - low
-candle_inside_bar   = candle_hi[1] > candle_hi and candle_lo[1] < candle_lo
-
-candle_pos_cog      = showCogs and (close >= ema20 and (close >= ema50 or close >= ema200) and close >= dVwapValue and (close >= wVwapValue or close >= mVwapValue)) and not is_basing_candle and ((candle_red[1] or is_doji[1]) and candle_green) and (candle_body_hi > candle_body_lo and (candle_body_hi > open[1] or candle_body_hi > candle_hi[1]))
-candle_neg_cog      = showCogs and (close <= ema20 and (close <= ema50 or close <= ema200) and close <= dVwapValue and (close <= wVwapValue or close <= mVwapValue)) and not is_basing_candle and ((candle_green[1] or is_doji[1]) and candle_red) and (candle_body_hi > candle_body_lo and (candle_body_lo < open[1] or candle_body_lo < candle_lo[1]))
-
-if candle_pos_cog
-    draw_pos_cog        = label.new(bar_index, high, xloc = xloc.bar_index, yloc = yloc.abovebar, text = "+COG", textcolor = cog_lbl_text_color, color = cog_lbl_color_pos)
-    alert("+ COG Made on " + str.tostring(syminfo.ticker), freq = alert.freq_once_per_bar)
-    label.delete(draw_pos_cog[1])
-if candle_neg_cog
-    draw_neg_cog        = label.new(bar_index, high, xloc = xloc.bar_index, yloc = yloc.abovebar, text = "-COG", textcolor = cog_lbl_text_color, color = cog_lbl_color_neg)
-    alert("- COG Made on " + str.tostring(syminfo.ticker), freq = alert.freq_once_per_bar)
-    label.delete(draw_neg_cog[1])  
-
-// for showing all cogs
-bgcolor(showAllCogs ? (ta.highest(candle_pos_cog ? 1 : 0, 1) != 0 ? cog_bg_color_pos : na) : na, offset=0)
-bgcolor(showAllCogs ? (ta.highest(candle_neg_cog ? 1 : 0, 1) != 0 ? cog_bg_color_neg : na) : na, offset=0)
-
-alertcondition(candle_pos_cog or candle_neg_cog, title = "COG Alert", message = "COG MADE at {{close}} for {{ticker}}")
-// ---------
-
-// --------- A + Panel
-ema20_2         = request.security(syminfo.tickerid, "2", ta.ema(close, 20))
-// ema50_2         = request.security(syminfo.tickerid, "2", ta.ema(close, 50))
-ema200_2        = request.security(syminfo.tickerid, "2", ta.ema(close, 200))
-ema20_5         = request.security(syminfo.tickerid, "5", ta.ema(close, 20))
-// ema50_5         = request.security(syminfo.tickerid, "5", ta.ema(close, 50))
-ema200_5        = request.security(syminfo.tickerid, "5", ta.ema(close, 200))
-ema20_15        = request.security(syminfo.tickerid, "15", ta.ema(close, 20))
-ema50_15        = request.security(syminfo.tickerid, "15", ta.ema(close, 50))
-ema20_60        = request.security(syminfo.tickerid, "60", ta.ema(close, 20))
-ema50_60        = request.security(syminfo.tickerid, "60", ta.ema(close, 50))
-ema5_d          = request.security(syminfo.tickerid, "D", ta.ema(close, 5))    
-ema20_d         = request.security(syminfo.tickerid, "D", ta.ema(close, 20))
-ema200_d        = request.security(syminfo.tickerid, "D", ta.ema(close, 200))
-ema5_w          = request.security(syminfo.tickerid, "W", ta.ema(close, 5))    
-ema20_w         = request.security(syminfo.tickerid, "W", ta.ema(close, 20))
-ema200_w        = request.security(syminfo.tickerid, "W", ta.ema(close, 200)) 
-ema5_m          = request.security(syminfo.tickerid, "M", ta.ema(close, 5))    
-ema20_m         = request.security(syminfo.tickerid, "M", ta.ema(close, 20))
-ema200_m        = request.security(syminfo.tickerid, "M", ta.ema(close, 200))
-
-// get Price Change values of all time frames 
-f_getPercentageChangeAll(_security) =>
-    _LTP = request.security(_security, 'D', close)
-    _previousPrice = request.security(_security, 'D', close[1])
-    _changePrice = _LTP - _previousPrice
-    _pct_D = f_get_changePercentage(_LTP, _previousPrice)
-    // _pct_CTF = f_get_changePercentage(_LTP, request.security(_security, CTF, close[1]))
-    // _pct_MTF = f_get_changePercentage(_LTP, request.security(_security, MTF, close[1]))
-    // _pct_HTF = f_get_changePercentage(_LTP, request.security(_security, HTF, close[1]))
-    [_LTP, _changePrice, _pct_D]
-
-// string seperator
-f_strRightOf(_str, _of) =>
-    // string _str: string to separate.
-    // string _op : separator character.
-    string[] _chars = str.split(_str, '')
-    int _len = array.size(_chars)
-    int _ofPos = array.indexof(_chars, _of)
-    string[] _substr = array.new_string(0)
-    if _ofPos >= 0 and _ofPos < _len - 1
-        _substr := array.slice(_chars, _ofPos + 1, _len)
-        _substr
-    string _return = array.join(_substr, '')
-    _return
-
-f_getTrendColor(_tf) =>
-    if _tf == "2" and ema20_2 > ema200_2 
-        color.green
-    else if _tf == "5" and ema20_5 > ema200_5
-        color.green
-    else if _tf == "15" and ema20_15 > ema50_15
-        color.green
-    else if _tf == "60" and ema20_60 > ema50_60
-        color.green
-    else if _tf == "D" and ema5_d > ema20_d and ema20_d > ema200_d
-        color.green
-    else if _tf == "W" and ema5_d > ema20_d and ema20_d > ema200_d
-        color.green
-    else if _tf == "M" and ema5_d > ema20_d and ema20_d > ema200_d
-        color.green             
-    else if _tf == "2" and ema20_2 < ema200_2
-        color.red    
-    else if _tf == "5" and ema20_5 < ema200_5
-        color.red    
-    else if _tf == "15" and ema20_15 < ema50_15
-        color.red    
-    else if _tf == "60" and ema20_60 < ema50_60
-        color.red 
-    else if _tf == "D" and ema5_d < ema20_d and ema20_d < ema200_d
-        color.red
-    else if _tf == "W" and ema5_d < ema20_d and ema20_d < ema200_d
-        color.red
-    else if _tf == "M" and ema5_d < ema20_d and ema20_d < ema200_d
-        color.red              
-    else
-        color.new(panel_cell_bg, panelTransparency)    
-
-f_getInternalsColor() =>
-    color.white    
-
-// Fill Header column function
-f_fill_HeaderColumn(_table, _column, _row, _cellText) =>
-    table.cell(_table, _column, _row, _cellText, bgcolor=color.new(panel_cell_bg, panelTransparency), text_size=panelTextSize, text_color=panel_font_color)
-// Fill Header Row function
-f_fill_HeaderRow(_table, _column, _row, _cellText) =>
-    table.cell(_table, _column, _row, f_strRightOf(_cellText, ':'), bgcolor=color.new(panel_cell_bg, panelTransparency), text_size=panelTextSize, text_color=panel_font_color)
-// Fill Cell Text  function
-f_fill_CellText(_table, _column, _row, _value, _percentage) =>
-    _c_color = _value >= 0 ? color.rgb(38, 166, 154) : color.rgb(240, 83, 80)
-    _cellText = _percentage ? str.tostring(_value, format.percent) : str.tostring(_value, '##.##')
-    table.cell(_table, _column, _row, _cellText, bgcolor=color.new(panel_cell_bg, panelTransparency), text_size=panelTextSize, text_color=_c_color)
-// Fill row for Trend direction
-f_fill_CellTextTrend(_table, _column, _row, _value) =>
-    table.cell(_table, _column, _row, _value, bgcolor=color.new(f_getTrendColor(_value), panelTransparency), text_size=panelTextSize, text_color=color.new(color.white, panelTransparency))
-
-// Fill Table Header Row  function
-f_fill_TableHeaderRow(_table, t_row, _col1_Title, _col2_Title, _col3_Title, _col4_Title, _col5_Title, _col6_Title, _col7_Title) =>
-    f_fill_HeaderColumn(_table, 1, t_row, _col1_Title)
-    f_fill_HeaderColumn(_table, 2, t_row, _col2_Title)
-    f_fill_HeaderColumn(_table, 3, t_row, _col3_Title)
-    f_fill_HeaderColumn(_table, 4, t_row, _col4_Title)
-    f_fill_HeaderColumn(_table, 5, t_row, _col5_Title)
-    f_fill_HeaderColumn(_table, 6, t_row, _col6_Title)
-    f_fill_HeaderColumn(_table, 7, t_row, _col7_Title)
-
-// Fill Table Row  function   
-f_fill_TableRow(_table, _row, _tickerChange, ticker_one, ticker_three, ticker_four, ticker_five, ticker_six, ticker_seven) =>
-    f_fill_HeaderRow(_table, 1, _row, _tickerChange)
-    f_fill_CellText(_table, 2, _row, ticker_one, false)
-    f_fill_CellText(_table, 3, _row, ticker_three, false)
-    f_fill_CellText(_table, 4, _row, ticker_four, false)
-    f_fill_CellText(_table, 5, _row, ticker_five, false)
-    f_fill_CellText(_table, 6, _row, ticker_six, false)
-    f_fill_CellText(_table, 7, _row, ticker_seven, false)
-
-f_fill_TableRowTrend(_table, _row, ticker_one, ticker_two, ticker_three, ticker_four, ticker_five, ticker_six, ticker_seven) =>
-    f_fill_CellTextTrend(_table, 1, _row, ticker_one)
-    f_fill_CellTextTrend(_table, 2, _row, ticker_two)
-    f_fill_CellTextTrend(_table, 3, _row, ticker_three)
-    f_fill_CellTextTrend(_table, 4, _row, ticker_four)
-    f_fill_CellTextTrend(_table, 5, _row, ticker_five)
-    f_fill_CellTextTrend(_table, 6, _row, ticker_six)
-    f_fill_CellTextTrend(_table, 7, _row, ticker_seven)   
-     
-//Table Settings
-var panel_position  = panelLocation == 'Top Left' ? position.top_left : panelLocation == 'Bottom Left' ? position.bottom_left : panelLocation == 'Middle Right' ? position.middle_right : panelLocation == 'Bottom Center' ? position.bottom_center : panelLocation == 'Top Right' ? position.top_right : position.bottom_right
-var t               = table.new(panel_position, 8, 120, border_color=color.new(panel_cell_bg, panelTransparency), border_width=1, frame_color=color.new(panel_cell_bg, panelTransparency), frame_width=1, bgcolor=color.new(panel_cell_bg, panelTransparency))
-
-// _tickerDOW      = input.symbol('MES1!', 'MES', group='Symbol Settings')
-_tickerVIX      = request.security('CBOE:VIX', '1', close, barmerge.gaps_off, lookahead = barmerge.lookahead_on)
-_tickerDXY      = request.security('TVC:DXY', '1', close, barmerge.gaps_off, lookahead = barmerge.lookahead_on)
-_tickerADD      = request.security('USI:ADD', '1', close, barmerge.gaps_off, lookahead = barmerge.lookahead_on)
-_tickerVOLD     = request.security('USI:VOLD', '1', close, barmerge.gaps_off, lookahead = barmerge.lookahead_on)
-// _tickerVOLDSPD  = request.security('CBOE:VIX', '1', close, barmerge.gaps_off, lookahead = barmerge.lookahead_on)
-_tickerTICK     = request.security('USI:TICK', '1', close, barmerge.gaps_off, lookahead = barmerge.lookahead_on)
-_tickerATR      = request.security(syminfo.tickerid, panelATRInput, ta.atr(14))
-
-f_fill_TableHeaderRow(t, 1, '%', 'VIX', 'DXY', 'ADD', 'VOLD', 'ATR-' + panelATRInput, 'TICK')
-f_fill_TableRow(t, 2, '', _tickerVIX, _tickerDXY, _tickerADD, _tickerVOLD, _tickerATR,_tickerTICK)
-f_fill_TableRowTrend(t, 3, '2', '5', '15', '60', 'D', 'W', 'M')
