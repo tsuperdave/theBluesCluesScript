@@ -44,7 +44,7 @@ cog_lbl_color_pos               = color.new(color.green, 90)
 cog_lbl_color_neg               = color.new(color.red, 90)
 cog_lbl_text_color              = color.new(color.black, 0)
 panel_color                     = color.new(color.gray, 70)
-panel_cell_bg                   = color.new(color.gray, 10)
+panel_cell_bg                   = #2c5257e6
 panel_cell_numbers_bg           = color.new(color.black, 20)
 panel_internals_extreme_up      = color.new(color.green, 10)
 panel_internals_elevated        = color.new(color.green, 10)
@@ -168,7 +168,8 @@ showAPlusPanel      = input.bool(true, title="Show A+ Setup Helper", inline = "P
 showMinimalistMode  = input.bool(false, title="Minimalist Mode", inline = "PanelMin", group = groupAPlusPanel)
 panelLocation       = input.string('Bottom Right', 'Panel Position', options=['Top Right', 'Bottom Right', 'Top Left', 'Bottom Left', 'Middle Right', 'Bottom Center'], inline = "PanelLoc", group = groupAPlusPanel)
 panelTransparency   = input.int(defval=20, title='Panel Transparency', group=groupAPlusPanel, inline='PanelTrans', minval=0, maxval=100, step=10) 
-panelTextSize       = input.string(defval='normal', title='Table Text Size', group= groupAPlusPanel, inline='panelTextSize', options=['auto', 'tiny', 'small', 'normal', 'large', 'huge'])            
+panelTextSize       = input.string(defval='normal', title='Panel Size', group= groupAPlusPanel, inline='panelTextSize', options=['auto', 'tiny', 'small', 'normal', 'large', 'huge'])
+panelATRInput       = input.string(defval='15', title='ATR Input', group= groupAPlusPanel, inline='PanelATR', options=['2', '5', '15', '30', '60', 'D', 'W', 'M'])             
 
 // EMAs -----------------------------
 plot(ema20, title="EMA-20", color = ltfColor, offset = 0, linewidth = 2, display = display_set)
@@ -608,9 +609,6 @@ f_getInternalsColor() =>
 // Fill Header column function
 f_fill_HeaderColumn(_table, _column, _row, _cellText) =>
     table.cell(_table, _column, _row, _cellText, bgcolor=color.new(panel_cell_bg, panelTransparency), text_size=panelTextSize, text_color=panel_font_color)
-// Fill Title column function
-f_fill_TitleColumn(_table, _column, _row, _cellText) =>
-    table.cell(_table, _column, _row, _cellText, bgcolor=color.rgb(0, 137, 123), text_size=panelTextSize, text_color=panel_font_color)
 // Fill Header Row function
 f_fill_HeaderRow(_table, _column, _row, _cellText) =>
     table.cell(_table, _column, _row, f_strRightOf(_cellText, ':'), bgcolor=color.new(panel_cell_bg, panelTransparency), text_size=panelTextSize, text_color=panel_font_color)
@@ -618,19 +616,10 @@ f_fill_HeaderRow(_table, _column, _row, _cellText) =>
 f_fill_CellText(_table, _column, _row, _value, _percentage) =>
     _c_color = _value >= 0 ? color.rgb(38, 166, 154) : color.rgb(240, 83, 80)
     _cellText = _percentage ? str.tostring(_value, format.percent) : str.tostring(_value, '##.##')
-    table.cell(_table, _column, _row, _cellText, bgcolor=panel_cell_bg, text_size=panelTextSize, text_color=panel_font_color)
+    table.cell(_table, _column, _row, _cellText, bgcolor=color.new(panel_cell_bg, panelTransparency), text_size=panelTextSize, text_color=_c_color)
 // Fill row for Trend direction
 f_fill_CellTextTrend(_table, _column, _row, _value) =>
-    table.cell(_table, _column, _row, _value, bgcolor=f_getTrendColor(_value), text_size=panelTextSize, text_color=color.white)
-
-// Fill Table Title Row  function
-f_fill_TableHeaderTitleRow(_table, t_row) =>
-    f_fill_TitleColumn(_table, 1, t_row, '')
-    f_fill_TitleColumn(_table, 2, t_row, '')
-    f_fill_TitleColumn(_table, 3, t_row, '')
-    f_fill_TitleColumn(_table, 4, t_row, '')
-    f_fill_TitleColumn(_table, 5, t_row, '')
-    f_fill_TitleColumn(_table, 6, t_row, '')
+    table.cell(_table, _column, _row, _value, bgcolor=color.new(f_getTrendColor(_value), panelTransparency), text_size=panelTextSize, text_color=color.new(color.white, panelTransparency))
 
 // Fill Table Header Row  function
 f_fill_TableHeaderRow(_table, t_row, _col1_Title, _col2_Title, _col3_Title, _col4_Title, _col5_Title, _col6_Title, _col7_Title) =>
@@ -662,8 +651,8 @@ f_fill_TableRowTrend(_table, _row, ticker_one, ticker_two, ticker_three, ticker_
     f_fill_CellTextTrend(_table, 7, _row, ticker_seven)   
      
 //Table Settings
-var panel_position = panelLocation == 'Top Left' ? position.top_left : panelLocation == 'Bottom Left' ? position.bottom_left : panelLocation == 'Middle Right' ? position.middle_right : panelLocation == 'Bottom Center' ? position.bottom_center : panelLocation == 'Top Right' ? position.top_right : position.bottom_right
-var t = table.new(panel_position, 8, 120, border_color=color.new(panel_cell_bg, panelTransparency), border_width=1, frame_color=color.new(panel_cell_bg, panelTransparency), frame_width=1, bgcolor=color.new(panel_cell_bg, panelTransparency))
+var panel_position  = panelLocation == 'Top Left' ? position.top_left : panelLocation == 'Bottom Left' ? position.bottom_left : panelLocation == 'Middle Right' ? position.middle_right : panelLocation == 'Bottom Center' ? position.bottom_center : panelLocation == 'Top Right' ? position.top_right : position.bottom_right
+var t               = table.new(panel_position, 8, 120, border_color=color.new(panel_cell_bg, panelTransparency), border_width=1, frame_color=color.new(panel_cell_bg, panelTransparency), frame_width=1, bgcolor=color.new(panel_cell_bg, panelTransparency))
 
 // _tickerDOW      = input.symbol('MES1!', 'MES', group='Symbol Settings')
 _tickerVIX      = request.security('CBOE:VIX', '1', close, barmerge.gaps_off, lookahead = barmerge.lookahead_on)
@@ -672,8 +661,8 @@ _tickerADD      = request.security('USI:ADD', '1', close, barmerge.gaps_off, loo
 _tickerVOLD     = request.security('USI:VOLD', '1', close, barmerge.gaps_off, lookahead = barmerge.lookahead_on)
 // _tickerVOLDSPD  = request.security('CBOE:VIX', '1', close, barmerge.gaps_off, lookahead = barmerge.lookahead_on)
 _tickerTICK     = request.security('USI:TICK', '1', close, barmerge.gaps_off, lookahead = barmerge.lookahead_on)
-_tickerATR      = request.security(syminfo.tickerid, "15", ta.atr(14))
+_tickerATR      = request.security(syminfo.tickerid, panelATRInput, ta.atr(14))
 
-f_fill_TableHeaderRow(t, 1, '%', 'VIX', 'DXY', 'ADD', 'VOLD', 'ATR-15m', 'TICK')
+f_fill_TableHeaderRow(t, 1, '%', 'VIX', 'DXY', 'ADD', 'VOLD', 'ATR-' + panelATRInput, 'TICK')
 f_fill_TableRow(t, 2, '', _tickerVIX, _tickerDXY, _tickerADD, _tickerVOLD, _tickerATR,_tickerTICK)
 f_fill_TableRowTrend(t, 3, '2', '5', '15', '60', 'D', 'W', 'M')
