@@ -1,7 +1,7 @@
 // This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 // © thesuperdave
 // credit to © MichelT for VWAP
-
+// 
 //                                                       
 //                       ---=-----                       
 //                 ---------------------                 
@@ -63,19 +63,19 @@ groupCog            = "---------- +/- COG Alerts --------------"
 groupAPlusPanel     = "-------------- A+ Panel  ---------------"
 
 // colors
-ema20color                      = color.new(color.aqua, 50)
-ema50color                      = color.new(color.blue, 50)
+ema20color                      = color.new(color.aqua, 70)
+ema50color                      = color.new(color.blue, 70)
 ema200color                     = color.new(color.purple, 50)
-dVwapColor                      = color.new(color.gray, 60)
-wVwapColor                      = color.new(color.yellow, 60)
-mVwapColor                      = color.new(color.orange, 60)
+dVwapColor                      = color.new(color.gray, 50)
+wVwapColor                      = color.new(color.yellow, 40)
+mVwapColor                      = color.new(color.orange, 10)
 globexLevelColor                = color.rgb(120, 123, 134, 17)
 dLevelColor                     = color.rgb(16, 105, 207, 18)
 wLevelColor                     = color.rgb(218, 221, 8, 5)
 mLevelColor                     = color.rgb(255, 153, 0, 23)
 bbColor                         = color.new(color.gray, 50)
-cog_bg_color_pos                = color.new(color.green, 90)
-cog_bg_color_neg                = color.new(color.red, 90)
+cog_bg_color_pos                = color.new(color.green, 80)
+cog_bg_color_neg                = color.new(color.red, 80)
 cog_lbl_color_pos               = color.new(color.green, 90)
 cog_lbl_color_neg               = color.new(color.red, 90)
 cog_lbl_text_color              = color.new(color.black, 0)
@@ -95,11 +95,11 @@ Offset(X)=>
     time + Bar * (1 + X * 1)
 f_get_changePercentage(_p1, _p2) => (_p1 - _p2) * 100 / _p2
 
-tf                  = timeframe.period
+current_tf                  = timeframe.period
 displayLtf          = timeframe.isintraday and timeframe.multiplier <= 5
 displayMtf          = timeframe.isintraday and (timeframe.multiplier >= 6 and timeframe.multiplier <= 60)
 displayHtf          = timeframe.isdwm
-displayVwapD        = tf == "D"
+displayVwapD        = current_tf == "D"
 displayVwapLtf      = displayLtf
 isFutures           = syminfo.type == 'futures'
 isForex             = syminfo.type == 'forex'
@@ -136,7 +136,8 @@ is20and200Bearish       = not is20and200Bullish
 is20and50Bearish        = not is20and50Bullish
 is50and200Bearish       = not is50and200Bullish
 
-legOutCandleSize    = 2.0
+var legOutCandleSize    = 2.0
+var cog_threshold       = 1.0                    
 
 // INPUTS --------------------------------
 
@@ -157,7 +158,7 @@ w_Line_Color        = input.color(defval = wLevelColor, title = "Weekly Level", 
 m_Line_Color        = input.color(defval = mLevelColor, title = "Monthly Level", inline = dwmLevels, group = groupDwmLevels)
 showGlobexLevels    = input.bool(defval = true, title = "Show Globex Hi/Lo?", inline = "globex", group = groupDwmLevels)
 showGlobexLabels    = input.bool(defval = true, title = 'Show Globex Label?', inline = "globex", group = groupDwmLevels)
-extendLines         = input.bool(defval = false, title = "Extend Levels Across Screen?", inline = dwmLevels, group = groupDwmLevels)
+extendLines         = input.bool(defval = true, title = "Extend Levels Across Screen?", inline = dwmLevels, group = groupDwmLevels)
 dwmLineWidth        = input.int(defval = 2, title = "Levels Line Width", minval = 1, maxval = 4, step = 1, group = groupDwmLevels)
 
 showHTFsdZones   = input.bool(true, title = "Show HTF Supply/Demand Zones?", inline = sdZoneGroupTxt, group = groupSD)
@@ -181,7 +182,7 @@ show2mZones     = input.bool(false, title="Show 2m", inline = "LTF", group = gro
 show5mZones     = input.bool(false, title="Show 5m", inline = "LTF", group = groupSDSettings)
 show15mZones    = input.bool(false, title="Show 15m", inline = "LTF", group = groupSDSettings)
 show30mZones    = input.bool(false, title="Show 30m", inline = "ITF", group = groupSDSettings)
-show60mZones    = input.bool(false, title="Show 60m", inline = "ITF", group = groupSDSettings)
+show60mZones    = input.bool(true, title="Show 60m", inline = "ITF", group = groupSDSettings)
 show4hZones     = input.bool(false, title="Show 4h", inline = "ITF", group = groupSDSettings)
 showDZones      = input.bool(true, title="Show D", inline = "HTF", group = groupSDSettings)
 showWZones      = input.bool(true, title="Show W", inline = "HTF", group = groupSDSettings)
@@ -198,7 +199,7 @@ cog_color_pos   = input.color(defval = cog_lbl_color_pos, title="+COG Label Colo
 cog_color_neg   = input.color(defval = cog_lbl_color_neg, title="-COG Label Color", inline = "CogColor", group = groupCog)
 cog_txt_color   = input.color(defval = cog_lbl_text_color, title="COG Label Text Color", inline = "CogColor", group = groupCog)
 showCogs        = input.bool(true, title="Show Recent Cogs", inline = "Cogs", group = groupCog)
-showAllCogs     = input.bool(false, title="Show All Cogs", inline = "Cogs", group = groupCog)
+showAllCogs     = input.bool(true, title="Show All Cogs", inline = "Cogs", group = groupCog)
 
 showAPlusPanel      = input.bool(true, title="Show A+ Setup Helper", inline = "Panel", group = groupAPlusPanel)
 showMinimalistMode  = input.bool(false, title="Minimalist Mode", inline = "PanelMin", group = groupAPlusPanel)
@@ -318,8 +319,8 @@ dVwapValue = sumSrcD / sumVolD
 wVwapValue = sumSrcW / sumVolW
 mVwapValue = sumSrcM / sumVolM
 plot(not isForex ? dVwapValue : na, title="D VWAP", style = plot.style_circles, color=dvColor, linewidth = 2, display = display_set)
-plot(not isForex ? wVwapValue : na, title="W VWAP", style = plot.style_circles, color=wvColor, linewidth = 2, display = display_set)
-plot(not isForex ? mVwapValue : na, title="M VWAP", style = plot.style_circles, color=mvColor, display = display_set)
+plot(not isForex ? wVwapValue : na, title="W VWAP", style = plot.style_circles, color=wvColor, linewidth = 3, display = display_set)
+plot(not isForex ? mVwapValue : na, title="M VWAP", style = plot.style_circles, color=mvColor, linewidth = 4, display = display_set)
 
 // DWM / Globex PRICE LEVELS --------------------------
 gHi_text='G Hi | ' + str.tostring(_gH, '0.00')
@@ -364,14 +365,19 @@ label.delete(label_monthly_High[1])
 label.delete(label_monthly_Low[1])
 
 // Supply and Demand Zones -----------------------------------------
-if tf == 'D'
-    tf := '1440'
-if tf == 'W'
-    tf := '10080'
-if showLTFsdZones
-    tf := '1'
+// basing candles
+// # of basing up to a max
+// # of hits in zone.
+// leg in size compared to basing/leg out
 
-momentCTD           = math.round(time(tf) + (sdOffset * 60000 * str.tonumber(tf)))
+if current_tf == 'D'
+    current_tf := '1440'
+if current_tf == 'W'
+    current_tf := '10080'
+if showLTFsdZones
+    current_tf := '1'
+
+momentCTD           = math.round(time(current_tf) + (sdOffset * 60000 * str.tonumber(current_tf)))
 var box[] supply_HT = array.new_box()
 var box[] demand_HT = array.new_box()
 
@@ -396,9 +402,6 @@ drawDemandZone(formattedTf, ctd_ht, top_ht, ctd, bot_ht, box_color, border_color
         box.set_text_halign(demand, text.align_right)
         box.set_text_valign(demand, sdTextAlignV)
     array.push(demand_HT, demand)
-
-// drawZone(formattedTf, left_ctd_ht, top_ht, ctd_ht, bot_ht, box_color, border_color) =>
-
 
 createZones(timeframe) => 
     [open_HT, high_HT, low_HT, close_HT]    = request.security(syminfo.tickerid, timeframe, [open[1], high[1], low[1], close[1]], lookahead = barmerge.lookahead_on)
@@ -470,30 +473,30 @@ createZones(timeframe) =>
 
         drawDemandZone(formatTf, momentCTD_HT, open_HT[1], momentCTD, bottomBox_HT, bgColorForBox, borderColorForBox)
 
-if show2mZones and str.tonumber(tf) <= 2
+if show2mZones and str.tonumber(current_tf) <= 2
     createZones('2')
-if show5mZones and str.tonumber(tf) <= 5
+if show5mZones and str.tonumber(current_tf) <= 5
     createZones('5')
-if show15mZones and str.tonumber(tf) <= 15
+if show15mZones and str.tonumber(current_tf) <= 15
     createZones('15')
-if show30mZones and str.tonumber(tf) <= 30
+if show30mZones and str.tonumber(current_tf) <= 30
     createZones('30')
-if show60mZones and str.tonumber(tf) <= 60
+if show60mZones and str.tonumber(current_tf) <= 60
     createZones('60')
-if show4hZones and str.tonumber(tf) <= 240
+if show4hZones and str.tonumber(current_tf) <= 240
     createZones('240') 
-if showDZones and str.tonumber(tf) <= 1440
+if showDZones and str.tonumber(current_tf) <= 1440
     createZones('D')
-if showWZones and str.tonumber(tf) <= 10080
+if showWZones and str.tonumber(current_tf) <= 10080
     createZones('W')
-if showMZones and str.tonumber(tf) <= 43800
+if showMZones and str.tonumber(current_tf) <= 43800
     createZones('M')
 
 i = 0
 while i < array.size(supply_HT) and array.size(supply_HT) > 0
     box currentBox = array.get(supply_HT, i)
     float breakLevel = box.get_top(currentBox)
-    if high > breakLevel 
+    if close >= breakLevel
         array.remove(supply_HT, i)
         box.delete(currentBox)
         int(na)
@@ -506,7 +509,7 @@ i2 = 0
 while i2 < array.size(demand_HT) and array.size(demand_HT) > 0
     box currentBox = array.get(demand_HT, i2)
     float breakLevel = box.get_bottom(currentBox)
-    if low < breakLevel 
+    if close <= breakLevel 
         array.remove(demand_HT, i2)
         box.delete(currentBox)
         int(na)
@@ -525,13 +528,20 @@ candle_basing       = (candle_body * 100)/(candle_hi - candle_lo)
 is_basing_candle    = math.abs(candle_basing) < 50
 is_doji             = candle_body_hi == candle_body_lo
 
+previous_candle_body_size = math.abs(open[1] - close[1])
+positive_cog_take_out_size = math.max(0, close - open[1])
+positive_strong_take_out = positive_cog_take_out_size > previous_candle_body_size * cog_threshold
+
+negative_cog_take_out_size = math.max(0, open[1] - close)
+negative_strong_take_out = negative_cog_take_out_size > previous_candle_body_size * cog_threshold
+
 candle_green        = open < close
 candle_red          = open > close
 candle_range        = high - low
 candle_inside_bar   = candle_hi[1] > candle_hi and candle_lo[1] < candle_lo
 
-candle_pos_cog      = showCogs and (close >= ema20 and (close >= ema50 or close >= ema200) and close >= dVwapValue and (close >= wVwapValue or close >= mVwapValue)) and not is_basing_candle and ((candle_red[1] or is_doji[1]) and candle_green) and (candle_body_hi > candle_body_lo and (candle_body_hi > open[1] or candle_body_hi > candle_hi[1]))
-candle_neg_cog      = showCogs and (close <= ema20 and (close <= ema50 or close <= ema200) and close <= dVwapValue and (close <= wVwapValue or close <= mVwapValue)) and not is_basing_candle and ((candle_green[1] or is_doji[1]) and candle_red) and (candle_body_hi > candle_body_lo and (candle_body_lo < open[1] or candle_body_lo < candle_lo[1]))
+candle_pos_cog      = showCogs and (close >= ema20 and (close >= ema50 or close >= ema200) and close >= dVwapValue and (close >= wVwapValue or close >= mVwapValue)) and not is_basing_candle and ((candle_red[1] or is_doji[1]) and candle_green) and (candle_body_hi > candle_body_lo and (candle_body_hi > open[1] or candle_body_hi > candle_hi[1])) and positive_strong_take_out
+candle_neg_cog      = showCogs and (close <= ema20 and (close <= ema50 or close <= ema200) and close <= dVwapValue and (close <= wVwapValue or close <= mVwapValue)) and not is_basing_candle and ((candle_green[1] or is_doji[1]) and candle_red) and (candle_body_hi > candle_body_lo and (candle_body_lo < open[1] or candle_body_lo < candle_lo[1])) and negative_strong_take_out
 
 if candle_pos_cog
     draw_pos_cog        = label.new(bar_index, high, xloc = xloc.bar_index, yloc = yloc.abovebar, text = "+COG", textcolor = cog_lbl_text_color, color = cog_lbl_color_pos)
